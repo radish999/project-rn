@@ -1,5 +1,5 @@
 import { Image } from "expo-image";
-import { useMemo, useState } from "react";
+import { startTransition, useState } from "react";
 import { useRouter } from "expo-router";
 import {
   FlatList,
@@ -11,22 +11,12 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { tracks } from "@/src/lib/tracks";
+import { useTracks } from "@/src/hooks/use-tracks";
 
 export default function Index() {
   const router = useRouter();
   const [query, setQuery] = useState("");
-
-  const data = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return tracks;
-    return tracks.filter((t) => {
-      return (
-        t.title.toLowerCase().includes(q) ||
-        t.artist.toLowerCase().includes(q)
-      );
-    });
-  }, [query]);
+  const { error, isLoading, source, tracks } = useTracks(query);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
@@ -35,7 +25,7 @@ export default function Index() {
         <View style={styles.glowBottom} />
 
         <FlatList
-          data={data}
+          data={tracks}
           keyExtractor={(item) => item.id}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContent}
@@ -60,8 +50,10 @@ export default function Index() {
                   </View>
                   <View style={styles.statDivider} />
                   <View style={styles.statCard}>
-                    <Text style={styles.statValue}>{data.length}</Text>
-                    <Text style={styles.statLabel}>搜索结果</Text>
+                    <Text style={styles.statValue}>
+                      {source === "jamendo" ? "Live" : "Demo"}
+                    </Text>
+                    <Text style={styles.statLabel}>歌单来源</Text>
                   </View>
                 </View>
 
@@ -103,12 +95,27 @@ export default function Index() {
                 <Text style={styles.searchIcon}>◎</Text>
                 <TextInput
                   value={query}
-                  onChangeText={setQuery}
+                  onChangeText={(value) => {
+                    startTransition(() => setQuery(value));
+                  }}
                   placeholder="搜索歌名 / 歌手"
                   placeholderTextColor="#6B7280"
                   style={styles.search}
                 />
               </View>
+
+              {(isLoading || error) && (
+                <View style={styles.infoCard}>
+                  <Text style={styles.infoTitle}>
+                    {isLoading ? "正在从 Jamendo 加载歌单..." : "歌单状态"}
+                  </Text>
+                  <Text style={styles.infoText}>
+                    {isLoading
+                      ? "正在获取在线曲目与封面，请稍候。"
+                      : error}
+                  </Text>
+                </View>
+              )}
             </View>
           }
           ListEmptyComponent={
@@ -457,5 +464,24 @@ const styles = StyleSheet.create({
     color: "#94A3B8",
     fontSize: 14,
     lineHeight: 21,
+  },
+  infoCard: {
+    marginTop: 12,
+    padding: 16,
+    borderRadius: 18,
+    backgroundColor: "rgba(15,23,42,0.88)",
+    borderWidth: 1,
+    borderColor: "rgba(148,163,184,0.14)",
+  },
+  infoTitle: {
+    color: "#F8FAFC",
+    fontSize: 14,
+    fontWeight: "800",
+  },
+  infoText: {
+    marginTop: 6,
+    color: "#94A3B8",
+    fontSize: 13,
+    lineHeight: 20,
   },
 });

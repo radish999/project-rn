@@ -5,7 +5,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { getTrackIndexById, tracks } from "@/src/lib/tracks";
+import { useTracks } from "@/src/hooks/use-tracks";
+import { getTrackIndexById } from "@/src/lib/tracks";
 
 function formatTime(ms: number) {
   if (!Number.isFinite(ms) || ms < 0) return "0:00";
@@ -18,11 +19,12 @@ function formatTime(ms: number) {
 export default function PlayerScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ id?: string }>();
+  const { error, source, tracks } = useTracks("");
 
   const initialIndex = useMemo(() => {
     const id = typeof params.id === "string" ? params.id : undefined;
-    return id ? getTrackIndexById(id) : 0;
-  }, [params.id]);
+    return id ? getTrackIndexById(tracks, id) : 0;
+  }, [params.id, tracks]);
 
   const [index, setIndex] = useState(initialIndex);
   const [barWidth, setBarWidth] = useState(0);
@@ -59,10 +61,18 @@ export default function PlayerScreen() {
   }, [player, status.isLoaded]);
 
   useEffect(() => {
-    if (status.didJustFinish) {
+    if (status.didJustFinish && tracks.length > 0) {
       setIndex((prev) => (prev + 1) % tracks.length);
     }
-  }, [status.didJustFinish]);
+  }, [status.didJustFinish, tracks.length]);
+
+  useEffect(() => {
+    if (!tracks.length) return;
+
+    const id = typeof params.id === "string" ? params.id : undefined;
+    const nextIndex = id ? getTrackIndexById(tracks, id) : 0;
+    setIndex(nextIndex);
+  }, [params.id, tracks]);
 
   const togglePlay = async () => {
     try {
@@ -162,7 +172,10 @@ export default function PlayerScreen() {
               </Pressable>
               <Pressable
                 style={styles.smallBtn}
-                onPress={() => setIndex((prev) => (prev - 1 + tracks.length) % tracks.length)}
+                onPress={() => {
+                  if (!tracks.length) return;
+                  setIndex((prev) => (prev - 1 + tracks.length) % tracks.length);
+                }}
               >
                 <Text style={styles.smallBtnText}>上一首</Text>
               </Pressable>
@@ -171,7 +184,10 @@ export default function PlayerScreen() {
               </Pressable>
               <Pressable
                 style={styles.smallBtn}
-                onPress={() => setIndex((prev) => (prev + 1) % tracks.length)}
+                onPress={() => {
+                  if (!tracks.length) return;
+                  setIndex((prev) => (prev + 1) % tracks.length);
+                }}
               >
                 <Text style={styles.smallBtnText}>下一首</Text>
               </Pressable>
@@ -189,6 +205,10 @@ export default function PlayerScreen() {
               </Text>
             </View>
             <Text style={styles.queueText}>播放结束后会自动切到下一首，适合连续试听整组曲目。</Text>
+            {error && <Text style={styles.queueHint}>{error}</Text>}
+            <Text style={styles.queueHint}>
+              当前来源：{source === "jamendo" ? "Jamendo 在线歌单" : "本地示例歌单"}
+            </Text>
           </View>
         </View>
       </View>
@@ -421,5 +441,11 @@ const styles = StyleSheet.create({
     color: "#94A3B8",
     fontSize: 14,
     lineHeight: 22,
+  },
+  queueHint: {
+    marginTop: 8,
+    color: "#64748B",
+    fontSize: 12,
+    lineHeight: 18,
   },
 });
