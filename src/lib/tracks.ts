@@ -8,6 +8,8 @@ export type Track = {
   url: string;
 };
 
+export type TrackCategory = "featured" | "pop" | "electronic" | "night";
+
 export const fallbackTracks: Track[] = [
   {
     id: "fallback-s1",

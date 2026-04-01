@@ -1,7 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { fetchJamendoTracks, hasJamendoClientId } from "@/src/api/jamendo";
-import { fallbackTracks, filterTracks, type Track } from "@/src/lib/tracks";
+import {
+  fallbackTracks,
+  filterTracks,
+  type Track,
+  type TrackCategory,
+} from "@/src/lib/tracks";
 
 type TrackSource = "jamendo" | "fallback";
 
@@ -12,8 +17,10 @@ type UseTracksResult = {
   tracks: Track[];
 };
 
-export function useTracks(query: string): UseTracksResult {
-  const [tracks, setTracks] = useState<Track[]>(fallbackTracks);
+export function useTracks(query: string, category: TrackCategory): UseTracksResult {
+  const [tracks, setTracks] = useState<Track[]>(
+    hasJamendoClientId() ? [] : fallbackTracks
+  );
   const [isLoading, setIsLoading] = useState(hasJamendoClientId());
   const [error, setError] = useState<string | null>(null);
   const [source, setSource] = useState<TrackSource>(
@@ -35,10 +42,11 @@ export function useTracks(query: string): UseTracksResult {
 
     let isCancelled = false;
     setIsLoading(true);
+    setError(null);
 
     const timer = setTimeout(async () => {
       try {
-        const nextTracks = await fetchJamendoTracks(query);
+        const nextTracks = await fetchJamendoTracks(query, category);
         if (isCancelled) return;
 
         setTracks(nextTracks);
@@ -47,12 +55,12 @@ export function useTracks(query: string): UseTracksResult {
       } catch (err) {
         if (isCancelled) return;
 
-        setTracks(fallbackData);
-        setSource("fallback");
+        setTracks([]);
+        setSource("jamendo");
         setError(
           err instanceof Error
-            ? `${err.message}，当前已切换到本地示例歌单。`
-            : "Jamendo 加载失败，当前已切换到本地示例歌单。"
+            ? `${err.message}，未能获取在线歌单。`
+            : "Jamendo 加载失败，未能获取在线歌单。"
         );
       } finally {
         if (!isCancelled) {
@@ -65,7 +73,7 @@ export function useTracks(query: string): UseTracksResult {
       isCancelled = true;
       clearTimeout(timer);
     };
-  }, [fallbackData, query]);
+  }, [category, fallbackData, query]);
 
   return {
     error,

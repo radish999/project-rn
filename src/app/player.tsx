@@ -19,7 +19,7 @@ function formatTime(ms: number) {
 export default function PlayerScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ id?: string }>();
-  const { error, source, tracks } = useTracks("");
+  const { error, isLoading, source, tracks } = useTracks("", "featured");
 
   const initialIndex = useMemo(() => {
     const id = typeof params.id === "string" ? params.id : undefined;
@@ -34,6 +34,7 @@ export default function PlayerScreen() {
   }, [initialIndex]);
 
   const track = tracks[index] ?? tracks[0];
+  const isTrackReady = Boolean(track);
   const player = useAudioPlayer(track?.url ?? null, {
     updateInterval: 450,
     downloadFirst: true,
@@ -55,10 +56,10 @@ export default function PlayerScreen() {
   }, []);
 
   useEffect(() => {
-    if (status.isLoaded) {
+    if (track?.url && status.isLoaded) {
       player.play();
     }
-  }, [player, status.isLoaded]);
+  }, [player, status.isLoaded, track?.url]);
 
   useEffect(() => {
     if (status.didJustFinish && tracks.length > 0) {
@@ -107,6 +108,15 @@ export default function PlayerScreen() {
   };
 
   const progress = durationMs ? positionMs / durationMs : 0;
+  const statusText = isLoading
+    ? "正在准备播放"
+    : isBuffering
+      ? "缓冲中"
+      : isPlaying
+        ? "正在播放"
+        : isTrackReady
+          ? "已暂停"
+          : "暂无可播放曲目";
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
@@ -128,25 +138,29 @@ export default function PlayerScreen() {
               <Text style={styles.backText}>返回曲库</Text>
             </Pressable>
             <View style={styles.badge}>
-              <Text style={styles.badgeText}>
-                {isBuffering ? "缓冲中" : isPlaying ? "正在播放" : "已暂停"}
-              </Text>
+              <Text style={styles.badgeText}>{statusText}</Text>
             </View>
           </View>
 
           <View style={styles.heroCard}>
             <View style={styles.heroHalo} />
             <View style={styles.artworkShell}>
-              <Image source={track.artwork} style={styles.artwork} contentFit="contain" />
+              {isTrackReady ? (
+                <Image source={track.artwork} style={styles.artwork} contentFit="contain" />
+              ) : (
+                <View style={styles.artworkPlaceholder}>
+                  <Text style={styles.artworkPlaceholderText}>♪</Text>
+                </View>
+              )}
             </View>
 
             <View style={styles.trackBlock}>
               <Text style={styles.eyebrow}>Now Playing</Text>
               <Text style={styles.title} numberOfLines={1}>
-                {track.title}
+                {track?.title ?? (isLoading ? "正在加载歌曲..." : "未找到可播放歌曲")}
               </Text>
               <Text style={styles.artist} numberOfLines={1}>
-                {track.artist}
+                {track?.artist ?? (isLoading ? "请稍候" : "请返回曲库重新选择")}
               </Text>
               <Text style={styles.albumMeta}>精选歌单 · 无损氛围感试听</Text>
             </View>
@@ -179,8 +193,14 @@ export default function PlayerScreen() {
               >
                 <Text style={styles.smallBtnText}>上一首</Text>
               </Pressable>
-              <Pressable style={styles.playBtn} onPress={togglePlay}>
-                <Text style={styles.playBtnText}>{isPlaying ? "暂停" : "播放"}</Text>
+              <Pressable
+                style={[styles.playBtn, !isTrackReady && styles.disabledBtn]}
+                onPress={togglePlay}
+                disabled={!isTrackReady}
+              >
+                <Text style={styles.playBtnText}>
+                  {isLoading ? "加载中" : isPlaying ? "暂停" : "播放"}
+                </Text>
               </Pressable>
               <Pressable
                 style={styles.smallBtn}
@@ -201,7 +221,7 @@ export default function PlayerScreen() {
             <View style={styles.queueTop}>
               <Text style={styles.queueTitle}>接下来播放</Text>
               <Text style={styles.queueCount}>
-                {index + 1}/{tracks.length}
+                {tracks.length ? index + 1 : 0}/{tracks.length}
               </Text>
             </View>
             <Text style={styles.queueText}>播放结束后会自动切到下一首，适合连续试听整组曲目。</Text>
@@ -314,6 +334,19 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     backgroundColor: "#13253A",
   },
+  artworkPlaceholder: {
+    width: "100%",
+    aspectRatio: 1,
+    borderRadius: 28,
+    backgroundColor: "#13253A",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  artworkPlaceholderText: {
+    color: "#7DD3FC",
+    fontSize: 68,
+    fontWeight: "300",
+  },
   trackBlock: {
     marginTop: 18,
   },
@@ -407,6 +440,9 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     backgroundColor: "#38BDF8",
     alignItems: "center",
+  },
+  disabledBtn: {
+    opacity: 0.6,
   },
   playBtnText: {
     color: "#062033",

@@ -1,7 +1,8 @@
 import { Image } from "expo-image";
-import { startTransition, useState } from "react";
+import { startTransition, useEffect, useRef, useState } from "react";
 import { useRouter } from "expo-router";
 import {
+  Animated,
   FlatList,
   Pressable,
   StyleSheet,
@@ -12,11 +13,74 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useTracks } from "@/src/hooks/use-tracks";
+import type { TrackCategory } from "@/src/lib/tracks";
+
+const categoryTabs: Array<{ key: TrackCategory; label: string }> = [
+  { key: "featured", label: "精选" },
+  { key: "pop", label: "流行" },
+  { key: "electronic", label: "电子" },
+  { key: "night", label: "夜间" },
+];
+
+function CategoryChip({
+  active,
+  label,
+  onPress,
+}: {
+  active: boolean;
+  label: string;
+  onPress: () => void;
+}) {
+  const animated = useRef(new Animated.Value(active ? 1 : 0)).current;
+
+  useEffect(() => {
+    Animated.spring(animated, {
+      toValue: active ? 1 : 0,
+      friction: 8,
+      tension: 80,
+      useNativeDriver: false,
+    }).start();
+  }, [active, animated]);
+
+  const animatedStyle = {
+    backgroundColor: animated.interpolate({
+      inputRange: [0, 1],
+      outputRange: ["rgba(15,23,42,0.9)", "#F8FAFC"],
+    }),
+    borderColor: animated.interpolate({
+      inputRange: [0, 1],
+      outputRange: ["rgba(148,163,184,0.14)", "rgba(255,255,255,0.94)"],
+    }),
+    transform: [
+      {
+        scale: animated.interpolate({
+          inputRange: [0, 1],
+          outputRange: [1, 1.04],
+        }),
+      },
+      {
+        translateY: animated.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0, -2],
+        }),
+      },
+    ],
+  };
+
+  return (
+    <Pressable onPress={onPress}>
+      <Animated.View style={[styles.chip, animatedStyle]}>
+        <Text style={[styles.chipText, active && styles.chipTextActive]}>{label}</Text>
+      </Animated.View>
+    </Pressable>
+  );
+}
 
 export default function Index() {
   const router = useRouter();
   const [query, setQuery] = useState("");
-  const { error, isLoading, source, tracks } = useTracks(query);
+  const [activeCategory, setActiveCategory] = useState<TrackCategory>("featured");
+  const { error, isLoading, source, tracks } = useTracks(query, activeCategory);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
@@ -77,18 +141,16 @@ export default function Index() {
               </View>
 
               <View style={styles.chipRow}>
-                <View style={[styles.chip, styles.chipActive]}>
-                  <Text style={[styles.chipText, styles.chipTextActive]}>精选</Text>
-                </View>
-                <View style={styles.chip}>
-                  <Text style={styles.chipText}>流行</Text>
-                </View>
-                <View style={styles.chip}>
-                  <Text style={styles.chipText}>电子</Text>
-                </View>
-                <View style={styles.chip}>
-                  <Text style={styles.chipText}>夜间</Text>
-                </View>
+                {categoryTabs.map((tab) => {
+                  return (
+                    <CategoryChip
+                      key={tab.key}
+                      active={tab.key === activeCategory}
+                      label={tab.label}
+                      onPress={() => setActiveCategory(tab.key)}
+                    />
+                  );
+                })}
               </View>
 
               <View style={styles.searchShell}>
@@ -340,12 +402,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 9,
     borderRadius: 999,
-    backgroundColor: "rgba(15,23,42,0.9)",
     borderWidth: 1,
-    borderColor: "rgba(148,163,184,0.14)",
-  },
-  chipActive: {
-    backgroundColor: "#F8FAFC",
+    shadowColor: "#020617",
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 6 },
   },
   chipText: {
     color: "#CBD5E1",

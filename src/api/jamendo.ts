@@ -1,4 +1,4 @@
-import type { Track } from "@/src/lib/tracks";
+import type { Track, TrackCategory } from "@/src/lib/tracks";
 
 const JAMENDO_BASE_URL = "https://api.jamendo.com/v3.0/tracks/";
 const JAMENDO_CLIENT_ID = process.env.EXPO_PUBLIC_JAMENDO_CLIENT_ID;
@@ -20,7 +20,21 @@ export function hasJamendoClientId() {
   return Boolean(JAMENDO_CLIENT_ID);
 }
 
-function buildJamendoUrl(query: string) {
+function getCategoryKeyword(category: TrackCategory) {
+  switch (category) {
+    case "pop":
+      return "pop";
+    case "electronic":
+      return "electronic dance";
+    case "night":
+      return "chill ambient night";
+    case "featured":
+    default:
+      return "";
+  }
+}
+
+function buildJamendoUrl(query: string, category: TrackCategory) {
   if (!JAMENDO_CLIENT_ID) {
     throw new Error("Missing EXPO_PUBLIC_JAMENDO_CLIENT_ID");
   }
@@ -35,8 +49,11 @@ function buildJamendoUrl(query: string) {
     order: "popularity_total",
   });
 
-  if (query.trim()) {
-    params.set("search", query.trim());
+  const categoryKeyword = getCategoryKeyword(category);
+  const searchTerms = [categoryKeyword, query.trim()].filter(Boolean).join(" ");
+
+  if (searchTerms) {
+    params.set("search", searchTerms);
   }
 
   return `${JAMENDO_BASE_URL}?${params.toString()}`;
@@ -59,8 +76,11 @@ function mapJamendoTrack(track: JamendoTrack): Track | null {
   };
 }
 
-export async function fetchJamendoTracks(query = ""): Promise<Track[]> {
-  const response = await fetch(buildJamendoUrl(query));
+export async function fetchJamendoTracks(
+  query = "",
+  category: TrackCategory = "featured"
+): Promise<Track[]> {
+  const response = await fetch(buildJamendoUrl(query, category));
 
   if (!response.ok) {
     throw new Error(`Jamendo request failed with status ${response.status}`);
