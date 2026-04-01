@@ -1,12 +1,11 @@
 import { Image } from "expo-image";
-import { setAudioModeAsync, useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useTracks } from "@/src/hooks/use-tracks";
-import { getTrackIndexById } from "@/src/lib/tracks";
+import { usePlayback } from "@/src/providers/playback-provider";
 
 function formatTime(ms: number) {
   if (!Number.isFinite(ms) || ms < 0) return "0:00";
@@ -20,87 +19,36 @@ export default function PlayerScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ id?: string }>();
   const { error, isLoading, source, tracks } = useTracks("", "featured");
-
-  const initialIndex = useMemo(() => {
-    const id = typeof params.id === "string" ? params.id : undefined;
-    return id ? getTrackIndexById(tracks, id) : 0;
-  }, [params.id, tracks]);
-
-  const [index, setIndex] = useState(initialIndex);
   const [barWidth, setBarWidth] = useState(0);
+  const {
+    currentIndex,
+    currentTrack,
+    durationMs,
+    hasQueue,
+    isBuffering,
+    isLoaded,
+    isPlaying,
+    jumpByMs,
+    playNext,
+    playPrevious,
+    positionMs,
+    queue,
+    seekToFraction,
+    selectTrack,
+    togglePlay,
+  } = usePlayback();
 
   useEffect(() => {
-    setIndex(initialIndex);
-  }, [initialIndex]);
-
-  const track = tracks[index] ?? tracks[0];
-  const isTrackReady = Boolean(track);
-  const player = useAudioPlayer(track?.url ?? null, {
-    updateInterval: 450,
-    downloadFirst: true,
-  });
-  const status = useAudioPlayerStatus(player);
-  const isPlaying = status.playing;
-  const isBuffering = status.isBuffering;
-  const positionMs = Math.floor((status.currentTime ?? 0) * 1000);
-  const durationMs = Math.floor((status.duration ?? 0) * 1000);
-
-  useEffect(() => {
-    setAudioModeAsync({
-      allowsRecording: false,
-      shouldPlayInBackground: false,
-      playsInSilentMode: true,
-      interruptionMode: "doNotMix",
-      shouldRouteThroughEarpiece: false,
-    }).catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    if (track?.url && status.isLoaded) {
-      player.play();
-    }
-  }, [player, status.isLoaded, track?.url]);
-
-  useEffect(() => {
-    if (status.didJustFinish && tracks.length > 0) {
-      setIndex((prev) => (prev + 1) % tracks.length);
-    }
-  }, [status.didJustFinish, tracks.length]);
-
-  useEffect(() => {
-    if (!tracks.length) return;
-
     const id = typeof params.id === "string" ? params.id : undefined;
-    const nextIndex = id ? getTrackIndexById(tracks, id) : 0;
-    setIndex(nextIndex);
-  }, [params.id, tracks]);
+    if (!id || !tracks.length) return;
 
-  const togglePlay = async () => {
-    try {
-      if (isPlaying) {
-        player.pause();
-      } else {
-        player.play();
-      }
-    } catch {}
-  };
-
-  const seekToFraction = async (fraction: number) => {
-    if (!durationMs) return;
-    const clamped = Math.max(0, Math.min(1, fraction));
-    const next = Math.floor(durationMs * clamped);
-    try {
-      await player.seekTo(next / 1000);
-    } catch {}
-  };
-
-  const jumpByMs = async (delta: number) => {
-    if (!durationMs) return;
-    const next = Math.max(0, Math.min(durationMs, positionMs + delta));
-    try {
-      await player.seekTo(next / 1000);
-    } catch {}
-  };
+    const hasRequestedTrack = queue.some((track) => track.id === id);
+    if (!hasRequestedTrack) {
+      selectTrack(id, tracks);
+    } else if (!currentTrack || currentTrack.id !== id) {
+      selectTrack(id);
+    }
+  }, [currentTrack, params.id, queue, selectTrack, tracks]);
 
   const onPressBar = async (x: number) => {
     if (!barWidth) return;
@@ -108,6 +56,8 @@ export default function PlayerScreen() {
   };
 
   const progress = durationMs ? positionMs / durationMs : 0;
+  const track = currentTrack;
+  const isTrackReady = Boolean(track && isLoaded);
   const statusText = isLoading
     ? "正在准备播放"
     : isBuffering
@@ -145,7 +95,7 @@ export default function PlayerScreen() {
           <View style={styles.heroCard}>
             <View style={styles.heroHalo} />
             <View style={styles.artworkShell}>
-              {isTrackReady ? (
+              {track ? (
                 <Image source={track.artwork} style={styles.artwork} contentFit="contain" />
               ) : (
                 <View style={styles.artworkPlaceholder}>
@@ -184,13 +134,7 @@ export default function PlayerScreen() {
               <Pressable style={styles.smallBtn} onPress={() => jumpByMs(-15000)}>
                 <Text style={styles.smallBtnText}>-15s</Text>
               </Pressable>
-              <Pressable
-                style={styles.smallBtn}
-                onPress={() => {
-                  if (!tracks.length) return;
-                  setIndex((prev) => (prev - 1 + tracks.length) % tracks.length);
-                }}
-              >
+              <Pressable style={styles.smallBtn} onPress={playPrevious}>
                 <Text style={styles.smallBtnText}>上一首</Text>
               </Pressable>
               <Pressable
@@ -202,13 +146,7 @@ export default function PlayerScreen() {
                   {isLoading ? "加载中" : isPlaying ? "暂停" : "播放"}
                 </Text>
               </Pressable>
-              <Pressable
-                style={styles.smallBtn}
-                onPress={() => {
-                  if (!tracks.length) return;
-                  setIndex((prev) => (prev + 1) % tracks.length);
-                }}
-              >
+              <Pressable style={styles.smallBtn} onPress={playNext}>
                 <Text style={styles.smallBtnText}>下一首</Text>
               </Pressable>
               <Pressable style={styles.smallBtn} onPress={() => jumpByMs(15000)}>
@@ -221,7 +159,7 @@ export default function PlayerScreen() {
             <View style={styles.queueTop}>
               <Text style={styles.queueTitle}>接下来播放</Text>
               <Text style={styles.queueCount}>
-                {tracks.length ? index + 1 : 0}/{tracks.length}
+                {hasQueue ? currentIndex + 1 : 0}/{queue.length}
               </Text>
             </View>
             <Text style={styles.queueText}>播放结束后会自动切到下一首，适合连续试听整组曲目。</Text>

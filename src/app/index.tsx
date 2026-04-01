@@ -14,6 +14,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useTracks } from "@/src/hooks/use-tracks";
 import type { TrackCategory } from "@/src/lib/tracks";
+import { usePlayback } from "@/src/providers/playback-provider";
 
 const categoryTabs: Array<{ key: TrackCategory; label: string }> = [
   { key: "featured", label: "精选" },
@@ -81,6 +82,7 @@ export default function Index() {
   const [query, setQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<TrackCategory>("featured");
   const { error, isLoading, source, tracks } = useTracks(query, activeCategory);
+  const { currentTrack, isPlaying, selectTrack } = usePlayback();
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
@@ -189,9 +191,10 @@ export default function Index() {
           renderItem={({ item, index }) => (
             <Pressable
               style={[styles.item, index === 0 && styles.itemFeatured]}
-              onPress={() =>
-                router.push({ pathname: "./player", params: { id: item.id } })
-              }
+              onPress={() => {
+                selectTrack(item.id, tracks);
+                router.push({ pathname: "./player", params: { id: item.id } });
+              }}
             >
               <View style={styles.itemIndex}>
                 <Text style={styles.itemIndexText}>{String(index + 1).padStart(2, "0")}</Text>
@@ -219,6 +222,28 @@ export default function Index() {
             </Pressable>
           )}
         />
+
+        {currentTrack && (
+          <Pressable
+            style={styles.miniPlayer}
+            onPress={() =>
+              router.push({ pathname: "./player", params: { id: currentTrack.id } })
+            }
+          >
+            <View style={styles.miniPlayerMeta}>
+              <Text style={styles.miniPlayerEyebrow}>正在播放</Text>
+              <Text style={styles.miniPlayerTitle} numberOfLines={1}>
+                {currentTrack.title}
+              </Text>
+              <Text style={styles.miniPlayerArtist} numberOfLines={1}>
+                {currentTrack.artist}
+              </Text>
+            </View>
+            <View style={styles.miniPlayerBadge}>
+              <Text style={styles.miniPlayerBadgeText}>{isPlaying ? "播放中" : "已暂停"}</Text>
+            </View>
+          </Pressable>
+        )}
       </View>
     </SafeAreaView>
   );
@@ -254,8 +279,62 @@ const styles = StyleSheet.create({
   listContent: {
     paddingHorizontal: 18,
     paddingTop: 12,
-    paddingBottom: 28,
+    paddingBottom: 120,
     gap: 12,
+  },
+  miniPlayer: {
+    position: "absolute",
+    left: 18,
+    right: 18,
+    bottom: 18,
+    borderRadius: 24,
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+    backgroundColor: "rgba(7,17,31,0.94)",
+    borderWidth: 1,
+    borderColor: "rgba(125,211,252,0.2)",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    shadowColor: "#020617",
+    shadowOpacity: 0.28,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 10 },
+  },
+  miniPlayerMeta: {
+    flex: 1,
+    paddingRight: 12,
+  },
+  miniPlayerEyebrow: {
+    color: "#7DD3FC",
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
+  },
+  miniPlayerTitle: {
+    color: "#F8FAFC",
+    fontSize: 16,
+    fontWeight: "800",
+    marginTop: 6,
+  },
+  miniPlayerArtist: {
+    color: "#94A3B8",
+    fontSize: 13,
+    marginTop: 4,
+  },
+  miniPlayerBadge: {
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: "rgba(56,189,248,0.14)",
+    borderWidth: 1,
+    borderColor: "rgba(125,211,252,0.25)",
+  },
+  miniPlayerBadgeText: {
+    color: "#BAE6FD",
+    fontSize: 12,
+    fontWeight: "700",
   },
   heroCard: {
     overflow: "hidden",
