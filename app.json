@@ -13,10 +13,10 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.sugar.projectrn"
+      "bundleIdentifier": "com.sugar.radishMusic"
     },
     "android": {
-      "package": "com.sugar.projectrn",
+      "package": "com.sugar.radishMusic",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/logo.png",
