@@ -77,11 +77,78 @@ function CategoryChip({
   );
 }
 
+function LoadingFooter({
+  hasMore,
+  isLoadingMore,
+}: {
+  hasMore: boolean;
+  isLoadingMore: boolean;
+}) {
+  const pulse = useRef(new Animated.Value(0.65)).current;
+
+  useEffect(() => {
+    if (!isLoadingMore) {
+      pulse.stopAnimation();
+      pulse.setValue(0.65);
+      return;
+    }
+
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, {
+          toValue: 1,
+          duration: 680,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulse, {
+          toValue: 0.65,
+          duration: 680,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+
+    loop.start();
+    return () => loop.stop();
+  }, [isLoadingMore, pulse]);
+
+  return (
+    <View style={styles.footerWrap}>
+      <View style={[styles.footerCard, !isLoadingMore && styles.footerCardIdle]}>
+        <View style={styles.footerIndicatorRow}>
+          <Animated.View
+            style={[
+              styles.footerIndicator,
+              isLoadingMore ? styles.footerIndicatorActive : styles.footerIndicatorIdle,
+              { opacity: pulse, transform: [{ scale: pulse }] },
+            ]}
+          />
+          <Text style={styles.footerTitle}>
+            {isLoadingMore
+              ? "正在加载更多歌曲"
+              : hasMore
+                ? "继续下滑，自动加载下一页"
+                : "已经到底了"}
+          </Text>
+        </View>
+        <Text style={styles.footerText}>
+          {isLoadingMore
+            ? "Jamendo 正在补充新的曲目。"
+            : hasMore
+              ? "接近列表底部时会自动追加，不需要额外点击。"
+              : "当前分类下已经没有更多可追加的歌曲。"}
+        </Text>
+      </View>
+    </View>
+  );
+}
+
 export default function Index() {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<TrackCategory>("featured");
-  const { error, isLoading, source, tracks } = useTracks(query, activeCategory);
+  const { error, hasMore, isLoading, isLoadingMore, loadMore, source, tracks } =
+    useTracks(query, activeCategory);
   const { currentTrack, isPlaying, selectTrack } = usePlayback();
 
   return (
@@ -95,6 +162,8 @@ export default function Index() {
           keyExtractor={(item) => item.id}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContent}
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.45}
           ListHeaderComponent={
             <View>
               <View style={styles.heroCard}>
@@ -187,6 +256,11 @@ export default function Index() {
               <Text style={styles.emptyTitle}>没有找到匹配结果</Text>
               <Text style={styles.emptyText}>换个关键词试试，比如歌名或歌手名。</Text>
             </View>
+          }
+          ListFooterComponent={
+            tracks.length > 0 ? (
+              <LoadingFooter hasMore={hasMore} isLoadingMore={isLoadingMore} />
+            ) : null
           }
           renderItem={({ item, index }) => (
             <Pressable
@@ -604,6 +678,53 @@ const styles = StyleSheet.create({
     color: "#94A3B8",
     fontSize: 14,
     lineHeight: 21,
+  },
+  footerCard: {
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderRadius: 18,
+    backgroundColor: "rgba(9,16,30,0.78)",
+    borderWidth: 1,
+    borderColor: "rgba(125,211,252,0.16)",
+  },
+  footerWrap: {
+    paddingTop: 8,
+    paddingBottom: 4,
+  },
+  footerCardIdle: {
+    backgroundColor: "rgba(10,18,36,0.58)",
+    borderColor: "rgba(148,163,184,0.12)",
+  },
+  footerIndicatorRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  footerIndicator: {
+    width: 8,
+    height: 8,
+    borderRadius: 999,
+    marginRight: 10,
+  },
+  footerIndicatorActive: {
+    backgroundColor: "#38BDF8",
+    shadowColor: "#38BDF8",
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 0 },
+  },
+  footerIndicatorIdle: {
+    backgroundColor: "#64748B",
+  },
+  footerTitle: {
+    color: "#E2E8F0",
+    fontSize: 13,
+    fontWeight: "800",
+  },
+  footerText: {
+    marginTop: 8,
+    color: "#94A3B8",
+    fontSize: 12,
+    lineHeight: 18,
   },
   infoCard: {
     marginTop: 12,

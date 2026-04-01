@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 
-import { fetchJamendoTracks, hasJamendoClientId } from "@/src/api/jamendo";
+import {
+  fetchJamendoTracks,
+  hasJamendoClientId,
+  JAMENDO_PAGE_SIZE,
+} from "@/src/api/jamendo";
 import {
   fallbackTracks,
   filterTracks,
@@ -12,7 +16,10 @@ type TrackSource = "jamendo" | "fallback";
 
 type UseTracksResult = {
   error: string | null;
+  hasMore: boolean;
   isLoading: boolean;
+  isLoadingMore: boolean;
+  loadMore: () => void;
   source: TrackSource;
   tracks: Track[];
 };
@@ -22,10 +29,13 @@ export function useTracks(query: string, category: TrackCategory): UseTracksResu
     hasJamendoClientId() ? [] : fallbackTracks
   );
   const [isLoading, setIsLoading] = useState(hasJamendoClientId());
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(hasJamendoClientId());
   const [error, setError] = useState<string | null>(null);
   const [source, setSource] = useState<TrackSource>(
     hasJamendoClientId() ? "jamendo" : "fallback"
   );
+  const [page, setPage] = useState(0);
 
   const fallbackData = useMemo(() => {
     return filterTracks(fallbackTracks, query);
@@ -36,27 +46,36 @@ export function useTracks(query: string, category: TrackCategory): UseTracksResu
       setTracks(fallbackData);
       setSource("fallback");
       setIsLoading(false);
+      setIsLoadingMore(false);
+      setHasMore(false);
+      setPage(0);
       setError("未配置 Jamendo client_id，当前使用本地示例歌单。");
       return;
     }
 
     let isCancelled = false;
     setIsLoading(true);
+    setIsLoadingMore(false);
+    setHasMore(true);
+    setPage(0);
     setError(null);
+    setTracks([]);
 
     const timer = setTimeout(async () => {
       try {
-        const nextTracks = await fetchJamendoTracks(query, category);
+        const nextTracks = await fetchJamendoTracks(query, category, 0);
         if (isCancelled) return;
 
         setTracks(nextTracks);
         setSource("jamendo");
+        setHasMore(nextTracks.length === JAMENDO_PAGE_SIZE);
         setError(null);
       } catch (err) {
         if (isCancelled) return;
 
         setTracks([]);
         setSource("jamendo");
+        setHasMore(false);
         setError(
           err instanceof Error
             ? `${err.message}，未能获取在线歌单。`
@@ -75,9 +94,45 @@ export function useTracks(query: string, category: TrackCategory): UseTracksResu
     };
   }, [category, fallbackData, query]);
 
+  const loadMore = () => {
+    if (!hasJamendoClientId() || isLoading || isLoadingMore || !hasMore) {
+      return;
+    }
+
+    const nextPage = page + 1;
+    const offset = nextPage * JAMENDO_PAGE_SIZE;
+
+    setIsLoadingMore(true);
+    setError(null);
+
+    void fetchJamendoTracks(query, category, offset)
+      .then((nextTracks) => {
+        setTracks((prevTracks) => {
+          const seenIds = new Set(prevTracks.map((track) => track.id));
+          const uniqueTracks = nextTracks.filter((track) => !seenIds.has(track.id));
+          return [...prevTracks, ...uniqueTracks];
+        });
+        setPage(nextPage);
+        setHasMore(nextTracks.length === JAMENDO_PAGE_SIZE);
+      })
+      .catch((err) => {
+        setError(
+          err instanceof Error
+            ? `${err.message}，继续加载更多歌曲失败。`
+            : "Jamendo 加载失败，继续加载更多歌曲失败。"
+        );
+      })
+      .finally(() => {
+        setIsLoadingMore(false);
+      });
+  };
+
   return {
     error,
+    hasMore,
     isLoading,
+    isLoadingMore,
+    loadMore,
     source,
     tracks,
   };

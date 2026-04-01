@@ -16,6 +16,8 @@ type JamendoResponse = {
   results?: JamendoTrack[];
 };
 
+export const JAMENDO_PAGE_SIZE = 20;
+
 export function hasJamendoClientId() {
   return Boolean(JAMENDO_CLIENT_ID);
 }
@@ -34,7 +36,7 @@ function getCategoryKeyword(category: TrackCategory) {
   }
 }
 
-function buildJamendoUrl(query: string, category: TrackCategory) {
+function buildJamendoUrl(query: string, category: TrackCategory, offset: number) {
   if (!JAMENDO_CLIENT_ID) {
     throw new Error("Missing EXPO_PUBLIC_JAMENDO_CLIENT_ID");
   }
@@ -42,7 +44,8 @@ function buildJamendoUrl(query: string, category: TrackCategory) {
   const params = new URLSearchParams({
     client_id: JAMENDO_CLIENT_ID,
     format: "json",
-    limit: "20",
+    limit: String(JAMENDO_PAGE_SIZE),
+    offset: String(offset),
     featured: "1",
     audioformat: "mp31",
     imagesize: "400",
@@ -78,9 +81,10 @@ function mapJamendoTrack(track: JamendoTrack): Track | null {
 
 export async function fetchJamendoTracks(
   query = "",
-  category: TrackCategory = "featured"
+  category: TrackCategory = "featured",
+  offset = 0
 ): Promise<Track[]> {
-  const response = await fetch(buildJamendoUrl(query, category));
+  const response = await fetch(buildJamendoUrl(query, category, offset));
 
   if (!response.ok) {
     throw new Error(`Jamendo request failed with status ${response.status}`);
