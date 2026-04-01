@@ -8,8 +8,8 @@ import {
   Text,
   TextInput,
   View,
-  ImageBackground,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { tracks } from "@/src/lib/tracks";
 
@@ -29,33 +29,78 @@ export default function Index() {
   }, [query]);
 
   return (
-    <ImageBackground
-      source={require("@/assets/images/bg.jpg")}
-      style={styles.bg}
-      resizeMode="cover"
-    >
-      <View style={styles.overlay} />
-      <View style={styles.container}>
-        <Text style={styles.title}>曲库</Text>
-        <TextInput
-          value={query}
-          onChangeText={setQuery}
-          placeholder="搜索歌名/歌手"
-          placeholderTextColor="rgba(255,255,255,0.7)"
-          style={styles.search}
-        />
+    <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
+      <View style={styles.screen}>
+        <View style={styles.glowTop} />
+        <View style={styles.glowBottom} />
+
         <FlatList
           data={data}
           keyExtractor={(item) => item.id}
+          showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContent}
-          renderItem={({ item }) => (
+          ListHeaderComponent={
+            <View>
+              <View style={styles.heroCard}>
+                <View style={styles.heroTag}>
+                  <Text style={styles.heroTagText}>今日聆听</Text>
+                </View>
+                <Text style={styles.heroTitle}>发现更舒服的听歌方式</Text>
+                <Text style={styles.heroSubtitle}>
+                  简洁曲库、即时搜索、点开就播。把注意力留给音乐本身。
+                </Text>
+
+                <View style={styles.heroStats}>
+                  <View style={styles.statCard}>
+                    <Text style={styles.statValue}>{tracks.length}</Text>
+                    <Text style={styles.statLabel}>首曲目</Text>
+                  </View>
+                  <View style={styles.statDivider} />
+                  <View style={styles.statCard}>
+                    <Text style={styles.statValue}>{data.length}</Text>
+                    <Text style={styles.statLabel}>搜索结果</Text>
+                  </View>
+                </View>
+              </View>
+
+              <View style={styles.sectionHeader}>
+                <View>
+                  <Text style={styles.sectionEyebrow}>曲库</Text>
+                  <Text style={styles.sectionTitle}>快速找到想听的歌</Text>
+                </View>
+              </View>
+
+              <View style={styles.searchShell}>
+                <Text style={styles.searchIcon}>◎</Text>
+                <TextInput
+                  value={query}
+                  onChangeText={setQuery}
+                  placeholder="搜索歌名 / 歌手"
+                  placeholderTextColor="#6B7280"
+                  style={styles.search}
+                />
+              </View>
+            </View>
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyCard}>
+              <Text style={styles.emptyTitle}>没有找到匹配结果</Text>
+              <Text style={styles.emptyText}>换个关键词试试，比如歌名或歌手名。</Text>
+            </View>
+          }
+          renderItem={({ item, index }) => (
             <Pressable
-              style={styles.item}
+              style={[styles.item, index === 0 && styles.itemFeatured]}
               onPress={() =>
                 router.push({ pathname: "./player", params: { id: item.id } })
               }
             >
-              <Image source={item.artwork} style={styles.artwork} />
+              <View style={styles.itemIndex}>
+                <Text style={styles.itemIndexText}>{String(index + 1).padStart(2, "0")}</Text>
+              </View>
+
+              <Image source={item.artwork} style={styles.artwork} contentFit="cover" />
+
               <View style={styles.meta}>
                 <Text style={styles.trackTitle} numberOfLines={1}>
                   {item.title}
@@ -63,77 +108,240 @@ export default function Index() {
                 <Text style={styles.trackArtist} numberOfLines={1}>
                   {item.artist}
                 </Text>
+                <Text style={styles.trackDesc} numberOfLines={1}>
+                  点击进入沉浸式播放页
+                </Text>
               </View>
-              <Text style={styles.playHint}>播放</Text>
+
+              <View style={styles.playPill}>
+                <Text style={styles.playPillText}>播放</Text>
+              </View>
             </Pressable>
           )}
         />
       </View>
-    </ImageBackground>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  bg: { flex: 1 },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.35)",
-  },
-  container: {
+  safeArea: {
     flex: 1,
-    paddingTop: 18,
-    paddingHorizontal: 16,
+    backgroundColor: "#07111F",
   },
-  title: {
-    color: "#FFFFFF",
-    fontSize: 28,
-    fontWeight: "800",
-    letterSpacing: 0.2,
+  screen: {
+    flex: 1,
+    backgroundColor: "#07111F",
   },
-  search: {
-    marginTop: 14,
-    height: 46,
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    color: "#FFFFFF",
-    backgroundColor: "rgba(17,24,39,0.45)",
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(255,255,255,0.2)",
+  glowTop: {
+    position: "absolute",
+    top: -120,
+    right: -40,
+    width: 260,
+    height: 260,
+    borderRadius: 260,
+    backgroundColor: "rgba(56,189,248,0.18)",
+  },
+  glowBottom: {
+    position: "absolute",
+    bottom: -100,
+    left: -80,
+    width: 280,
+    height: 280,
+    borderRadius: 280,
+    backgroundColor: "rgba(244,114,182,0.14)",
   },
   listContent: {
-    paddingTop: 14,
+    paddingHorizontal: 18,
+    paddingTop: 12,
     paddingBottom: 28,
-    gap: 10,
+    gap: 12,
+  },
+  heroCard: {
+    padding: 22,
+    borderRadius: 28,
+    backgroundColor: "#0E1A2B",
+    borderWidth: 1,
+    borderColor: "rgba(148,163,184,0.18)",
+    shadowColor: "#020617",
+    shadowOpacity: 0.28,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 12 },
+    elevation: 10,
+  },
+  heroTag: {
+    alignSelf: "flex-start",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: "#15314F",
+  },
+  heroTagText: {
+    color: "#7DD3FC",
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  heroTitle: {
+    marginTop: 16,
+    color: "#F8FAFC",
+    fontSize: 31,
+    lineHeight: 38,
+    fontWeight: "900",
+  },
+  heroSubtitle: {
+    marginTop: 10,
+    color: "#94A3B8",
+    fontSize: 15,
+    lineHeight: 23,
+    fontWeight: "500",
+  },
+  heroStats: {
+    marginTop: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 22,
+    backgroundColor: "#0A1424",
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+  },
+  statCard: {
+    flex: 1,
+  },
+  statValue: {
+    color: "#FFFFFF",
+    fontSize: 24,
+    fontWeight: "900",
+  },
+  statLabel: {
+    marginTop: 4,
+    color: "#94A3B8",
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  statDivider: {
+    width: 1,
+    alignSelf: "stretch",
+    marginHorizontal: 12,
+    backgroundColor: "rgba(148,163,184,0.18)",
+  },
+  sectionHeader: {
+    marginTop: 22,
+    marginBottom: 12,
+  },
+  sectionEyebrow: {
+    color: "#7DD3FC",
+    fontSize: 12,
+    fontWeight: "800",
+    letterSpacing: 1,
+    textTransform: "uppercase",
+  },
+  sectionTitle: {
+    marginTop: 6,
+    color: "#F8FAFC",
+    fontSize: 24,
+    fontWeight: "800",
+  },
+  searchShell: {
+    height: 56,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    backgroundColor: "#F8FAFC",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+  },
+  searchIcon: {
+    marginRight: 10,
+    color: "#0F172A",
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  search: {
+    flex: 1,
+    color: "#0F172A",
+    fontSize: 17,
+    fontWeight: "600",
   },
   item: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 12,
-    borderRadius: 16,
-    backgroundColor: "rgba(255,255,255,0.14)",
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(255,255,255,0.22)",
+    padding: 14,
+    borderRadius: 24,
+    backgroundColor: "rgba(15,23,42,0.88)",
+    borderWidth: 1,
+    borderColor: "rgba(148,163,184,0.16)",
   },
-  artwork: { width: 52, height: 52, borderRadius: 12 },
-  meta: { flex: 1, marginLeft: 12 },
+  itemFeatured: {
+    backgroundColor: "rgba(17, 33, 58, 0.98)",
+    borderColor: "rgba(125,211,252,0.22)",
+  },
+  itemIndex: {
+    width: 38,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  itemIndexText: {
+    color: "#64748B",
+    fontSize: 12,
+    fontWeight: "800",
+  },
+  artwork: {
+    width: 62,
+    height: 62,
+    borderRadius: 18,
+    backgroundColor: "#102033",
+  },
+  meta: {
+    flex: 1,
+    marginLeft: 14,
+    marginRight: 10,
+  },
   trackTitle: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "700",
+    color: "#F8FAFC",
+    fontSize: 19,
+    fontWeight: "800",
   },
   trackArtist: {
-    marginTop: 3,
-    color: "rgba(255,255,255,0.78)",
-    fontSize: 13,
+    marginTop: 4,
+    color: "#CBD5E1",
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  trackDesc: {
+    marginTop: 6,
+    color: "#64748B",
+    fontSize: 12,
     fontWeight: "600",
   },
-  playHint: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "800",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+  playPill: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
     borderRadius: 999,
-    backgroundColor: "rgba(37,99,235,0.8)",
+    backgroundColor: "#38BDF8",
+  },
+  playPillText: {
+    color: "#062033",
+    fontSize: 13,
+    fontWeight: "900",
+  },
+  emptyCard: {
+    marginTop: 8,
+    padding: 20,
+    borderRadius: 22,
+    backgroundColor: "rgba(15,23,42,0.72)",
+    borderWidth: 1,
+    borderColor: "rgba(148,163,184,0.16)",
+  },
+  emptyTitle: {
+    color: "#F8FAFC",
+    fontSize: 18,
+    fontWeight: "800",
+  },
+  emptyText: {
+    marginTop: 8,
+    color: "#94A3B8",
+    fontSize: 14,
+    lineHeight: 21,
   },
 });
