@@ -125,7 +125,10 @@ export default function PlayerScreen() {
           </View>
 
           <View style={styles.heroCard}>
-            <Image source={track.artwork} style={styles.artwork} contentFit="contain" />
+            <View style={styles.heroHalo} />
+            <View style={styles.artworkShell}>
+              <Image source={track.artwork} style={styles.artwork} contentFit="contain" />
+            </View>
 
             <View style={styles.trackBlock}>
               <Text style={styles.eyebrow}>Now Playing</Text>
@@ -135,6 +138,7 @@ export default function PlayerScreen() {
               <Text style={styles.artist} numberOfLines={1}>
                 {track.artist}
               </Text>
+              <Text style={styles.albumMeta}>精选歌单 · 无损氛围感试听</Text>
             </View>
 
             <Pressable
@@ -178,10 +182,13 @@ export default function PlayerScreen() {
           </View>
 
           <View style={styles.queueCard}>
-            <Text style={styles.queueTitle}>播放建议</Text>
-            <Text style={styles.queueText}>
-              当前第 {index + 1} 首，共 {tracks.length} 首。播放结束后会自动切到下一首。
-            </Text>
+            <View style={styles.queueTop}>
+              <Text style={styles.queueTitle}>接下来播放</Text>
+              <Text style={styles.queueCount}>
+                {index + 1}/{tracks.length}
+              </Text>
+            </View>
+            <Text style={styles.queueText}>播放结束后会自动切到下一首，适合连续试听整组曲目。</Text>
           </View>
         </View>
       </View>
@@ -252,10 +259,11 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   heroCard: {
+    overflow: "hidden",
     marginTop: 18,
-    padding: 18,
-    borderRadius: 30,
-    backgroundColor: "#0E1A2B",
+    padding: 20,
+    borderRadius: 34,
+    backgroundColor: "#101826",
     borderWidth: 1,
     borderColor: "rgba(148,163,184,0.18)",
     shadowColor: "#020617",
@@ -264,10 +272,26 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 12 },
     elevation: 10,
   },
+  heroHalo: {
+    position: "absolute",
+    top: -35,
+    right: -20,
+    width: 190,
+    height: 190,
+    borderRadius: 190,
+    backgroundColor: "rgba(56,189,248,0.14)",
+  },
+  artworkShell: {
+    padding: 10,
+    borderRadius: 34,
+    backgroundColor: "rgba(255,255,255,0.05)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+  },
   artwork: {
     width: "100%",
     aspectRatio: 1,
-    borderRadius: 26,
+    borderRadius: 28,
     backgroundColor: "#13253A",
   },
   trackBlock: {
@@ -283,7 +307,7 @@ const styles = StyleSheet.create({
   title: {
     marginTop: 10,
     color: "#F8FAFC",
-    fontSize: 30,
+    fontSize: 32,
     fontWeight: "900",
   },
   artist: {
@@ -292,8 +316,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
   },
+  albumMeta: {
+    marginTop: 8,
+    color: "#64748B",
+    fontSize: 13,
+    fontWeight: "600",
+  },
   progressShell: {
-    marginTop: 22,
+    marginTop: 24,
     justifyContent: "center",
     height: 22,
   },
@@ -340,8 +370,8 @@ const styles = StyleSheet.create({
   smallBtn: {
     flex: 1,
     paddingVertical: 12,
-    borderRadius: 16,
-    backgroundColor: "#111F33",
+    borderRadius: 18,
+    backgroundColor: "rgba(255,255,255,0.06)",
     borderWidth: 1,
     borderColor: "rgba(148,163,184,0.14)",
     alignItems: "center",
@@ -353,8 +383,8 @@ const styles = StyleSheet.create({
   },
   playBtn: {
     flex: 1.2,
-    paddingVertical: 14,
-    borderRadius: 18,
+    paddingVertical: 15,
+    borderRadius: 22,
     backgroundColor: "#38BDF8",
     alignItems: "center",
   },
@@ -371,9 +401,19 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(148,163,184,0.16)",
   },
+  queueTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
   queueTitle: {
     color: "#F8FAFC",
     fontSize: 18,
+    fontWeight: "800",
+  },
+  queueCount: {
+    color: "#7DD3FC",
+    fontSize: 13,
     fontWeight: "800",
   },
   queueText: {

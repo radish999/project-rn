@@ -42,12 +42,15 @@ export default function Index() {
           ListHeaderComponent={
             <View>
               <View style={styles.heroCard}>
+                <View style={styles.heroOrbLarge} />
+                <View style={styles.heroOrbSmall} />
                 <View style={styles.heroTag}>
-                  <Text style={styles.heroTagText}>今日聆听</Text>
+                  <Text style={styles.heroTagText}>编辑推荐</Text>
                 </View>
-                <Text style={styles.heroTitle}>发现更舒服的听歌方式</Text>
+                <Text style={styles.heroKicker}>For You</Text>
+                <Text style={styles.heroTitle}>把曲库变成一张有呼吸感的首页</Text>
                 <Text style={styles.heroSubtitle}>
-                  简洁曲库、即时搜索、点开就播。把注意力留给音乐本身。
+                  更像 Apple Music 的精选感，也保留 Spotify 那种直接、顺手、随点随播的效率。
                 </Text>
 
                 <View style={styles.heroStats}>
@@ -61,12 +64,38 @@ export default function Index() {
                     <Text style={styles.statLabel}>搜索结果</Text>
                   </View>
                 </View>
+
+                <View style={styles.heroFeatureRow}>
+                  <View style={styles.featureCard}>
+                    <Text style={styles.featureLabel}>Mood</Text>
+                    <Text style={styles.featureValue}>Late Night</Text>
+                  </View>
+                  <View style={styles.featureCard}>
+                    <Text style={styles.featureLabel}>Focus</Text>
+                    <Text style={styles.featureValue}>Deep Listening</Text>
+                  </View>
+                </View>
               </View>
 
               <View style={styles.sectionHeader}>
                 <View>
                   <Text style={styles.sectionEyebrow}>曲库</Text>
                   <Text style={styles.sectionTitle}>快速找到想听的歌</Text>
+                </View>
+              </View>
+
+              <View style={styles.chipRow}>
+                <View style={[styles.chip, styles.chipActive]}>
+                  <Text style={[styles.chipText, styles.chipTextActive]}>精选</Text>
+                </View>
+                <View style={styles.chip}>
+                  <Text style={styles.chipText}>流行</Text>
+                </View>
+                <View style={styles.chip}>
+                  <Text style={styles.chipText}>电子</Text>
+                </View>
+                <View style={styles.chip}>
+                  <Text style={styles.chipText}>夜间</Text>
                 </View>
               </View>
 
@@ -99,7 +128,9 @@ export default function Index() {
                 <Text style={styles.itemIndexText}>{String(index + 1).padStart(2, "0")}</Text>
               </View>
 
-              <Image source={item.artwork} style={styles.artwork} contentFit="cover" />
+              <View style={styles.artworkShell}>
+                <Image source={item.artwork} style={styles.artwork} contentFit="cover" />
+              </View>
 
               <View style={styles.meta}>
                 <Text style={styles.trackTitle} numberOfLines={1}>
@@ -114,7 +145,7 @@ export default function Index() {
               </View>
 
               <View style={styles.playPill}>
-                <Text style={styles.playPillText}>播放</Text>
+                <Text style={styles.playPillText}>▶</Text>
               </View>
             </Pressable>
           )}
@@ -158,9 +189,10 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   heroCard: {
+    overflow: "hidden",
     padding: 22,
-    borderRadius: 28,
-    backgroundColor: "#0E1A2B",
+    borderRadius: 32,
+    backgroundColor: "#101826",
     borderWidth: 1,
     borderColor: "rgba(148,163,184,0.18)",
     shadowColor: "#020617",
@@ -168,6 +200,24 @@ const styles = StyleSheet.create({
     shadowRadius: 18,
     shadowOffset: { width: 0, height: 12 },
     elevation: 10,
+  },
+  heroOrbLarge: {
+    position: "absolute",
+    top: -40,
+    right: -20,
+    width: 180,
+    height: 180,
+    borderRadius: 180,
+    backgroundColor: "rgba(56,189,248,0.18)",
+  },
+  heroOrbSmall: {
+    position: "absolute",
+    bottom: -30,
+    right: 70,
+    width: 110,
+    height: 110,
+    borderRadius: 110,
+    backgroundColor: "rgba(167,139,250,0.14)",
   },
   heroTag: {
     alignSelf: "flex-start",
@@ -181,11 +231,18 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "700",
   },
+  heroKicker: {
+    marginTop: 18,
+    color: "#E2E8F0",
+    fontSize: 14,
+    fontWeight: "700",
+    opacity: 0.8,
+  },
   heroTitle: {
-    marginTop: 16,
+    marginTop: 8,
     color: "#F8FAFC",
-    fontSize: 31,
-    lineHeight: 38,
+    fontSize: 34,
+    lineHeight: 40,
     fontWeight: "900",
   },
   heroSubtitle: {
@@ -203,6 +260,32 @@ const styles = StyleSheet.create({
     backgroundColor: "#0A1424",
     paddingHorizontal: 14,
     paddingVertical: 14,
+  },
+  heroFeatureRow: {
+    marginTop: 14,
+    flexDirection: "row",
+    gap: 10,
+  },
+  featureCard: {
+    flex: 1,
+    padding: 14,
+    borderRadius: 18,
+    backgroundColor: "rgba(255,255,255,0.06)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+  },
+  featureLabel: {
+    color: "#94A3B8",
+    fontSize: 11,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+  },
+  featureValue: {
+    marginTop: 6,
+    color: "#F8FAFC",
+    fontSize: 16,
+    fontWeight: "800",
   },
   statCard: {
     flex: 1,
@@ -241,13 +324,37 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "800",
   },
+  chipRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 12,
+  },
+  chip: {
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 999,
+    backgroundColor: "rgba(15,23,42,0.9)",
+    borderWidth: 1,
+    borderColor: "rgba(148,163,184,0.14)",
+  },
+  chipActive: {
+    backgroundColor: "#F8FAFC",
+  },
+  chipText: {
+    color: "#CBD5E1",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  chipTextActive: {
+    color: "#0F172A",
+  },
   searchShell: {
-    height: 56,
+    height: 58,
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
-    borderRadius: 20,
-    backgroundColor: "#F8FAFC",
+    borderRadius: 22,
+    backgroundColor: "rgba(248,250,252,0.96)",
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.08)",
   },
@@ -267,14 +374,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     padding: 14,
-    borderRadius: 24,
-    backgroundColor: "rgba(15,23,42,0.88)",
+    borderRadius: 26,
+    backgroundColor: "rgba(12,18,31,0.92)",
     borderWidth: 1,
     borderColor: "rgba(148,163,184,0.16)",
   },
   itemFeatured: {
-    backgroundColor: "rgba(17, 33, 58, 0.98)",
-    borderColor: "rgba(125,211,252,0.22)",
+    backgroundColor: "rgba(17, 30, 51, 0.98)",
+    borderColor: "rgba(125,211,252,0.28)",
   },
   itemIndex: {
     width: 38,
@@ -286,10 +393,15 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "800",
   },
+  artworkShell: {
+    padding: 3,
+    borderRadius: 22,
+    backgroundColor: "rgba(255,255,255,0.06)",
+  },
   artwork: {
     width: 62,
     height: 62,
-    borderRadius: 18,
+    borderRadius: 19,
     backgroundColor: "#102033",
   },
   meta: {
@@ -315,14 +427,16 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   playPill: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    width: 42,
+    height: 42,
     borderRadius: 999,
     backgroundColor: "#38BDF8",
+    alignItems: "center",
+    justifyContent: "center",
   },
   playPillText: {
     color: "#062033",
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: "900",
   },
   emptyCard: {
