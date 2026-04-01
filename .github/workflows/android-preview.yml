@@ -1,0 +1,60 @@
+name: Android Preview Build
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: android-preview-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-android-preview:
+    runs-on: ubuntu-latest
+    env:
+      CI: 1
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run checks
+        run: |
+          npm run lint
+          npx expo-doctor
+
+      - name: Trigger EAS Android preview build
+        id: eas_build
+        run: |
+          build_json=$(npx eas-cli build --platform android --profile preview --non-interactive --no-wait --json)
+          printf '%s\n' "$build_json" > eas-build.json
+          echo "$build_json"
+
+          build_id=$(node -e "const fs=require('fs'); const data=JSON.parse(fs.readFileSync('eas-build.json','utf8')); process.stdout.write(data[0].id)")
+          build_page="https://expo.dev/accounts/radishmeng/projects/project-rn/builds/${build_id}"
+
+          echo "build_id=$build_id" >> "$GITHUB_OUTPUT"
+          echo "build_page=$build_page" >> "$GITHUB_OUTPUT"
+
+      - name: Publish summary
+        run: |
+          {
+            echo "## Android Preview Build"
+            echo ""
+            echo "- Build ID: \`${{ steps.eas_build.outputs.build_id }}\`"
+            echo "- Build Page: ${{ steps.eas_build.outputs.build_page }}"
+            echo "- Trigger: \`${{ github.event_name }}\`"
+            echo ""
+            echo "APK 下载链接会在 EAS 云构建完成后出现在该页面里。"
+          } >> "$GITHUB_STEP_SUMMARY"
