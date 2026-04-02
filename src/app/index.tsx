@@ -17,10 +17,10 @@ import type { TrackCategory } from "@/src/lib/tracks";
 import { usePlayback } from "@/src/providers/playback-provider";
 
 const categoryTabs: Array<{ key: TrackCategory; label: string }> = [
-  { key: "featured", label: "精选" },
-  { key: "pop", label: "流行" },
-  { key: "electronic", label: "电子" },
-  { key: "night", label: "夜间" },
+  { key: "featured", label: "Featured" },
+  { key: "pop", label: "Pop" },
+  { key: "electronic", label: "Electronic" },
+  { key: "night", label: "Night" },
 ];
 
 function CategoryChip({
@@ -125,18 +125,18 @@ function LoadingFooter({
           />
           <Text style={styles.footerTitle}>
             {isLoadingMore
-              ? "正在加载更多歌曲"
+              ? "Loading more tracks"
               : hasMore
-                ? "继续下滑，自动加载下一页"
-                : "已经到底了"}
+                ? "Keep scrolling for the next page"
+                : "You're all caught up"}
           </Text>
         </View>
         <Text style={styles.footerText}>
           {isLoadingMore
-            ? "Jamendo 正在补充新的曲目。"
+            ? "Jamendo is fetching another batch right now."
             : hasMore
-              ? "接近列表底部时会自动追加，不需要额外点击。"
-              : "当前分类下已经没有更多可追加的歌曲。"}
+              ? "More songs will load automatically near the bottom."
+              : "There are no more songs to load in this category."}
         </Text>
       </View>
     </View>
@@ -170,25 +170,25 @@ export default function Index() {
                 <View style={styles.heroOrbLarge} />
                 <View style={styles.heroOrbSmall} />
                 <View style={styles.heroTag}>
-                  <Text style={styles.heroTagText}>编辑推荐</Text>
+                  <Text style={styles.heroTagText}>Editor&apos;s Pick</Text>
                 </View>
                 <Text style={styles.heroKicker}>For You</Text>
-                <Text style={styles.heroTitle}>把曲库变成一张有呼吸感的首页</Text>
+                <Text style={styles.heroTitle}>Turn the library into a living music home</Text>
                 <Text style={styles.heroSubtitle}>
-                  更像 Apple Music 的精选感，也保留 Spotify 那种直接、顺手、随点随播的效率。
+                  A home screen shaped with Apple Music polish and Spotify-style speed for instant listening.
                 </Text>
 
                 <View style={styles.heroStats}>
                   <View style={styles.statCard}>
                     <Text style={styles.statValue}>{tracks.length}</Text>
-                    <Text style={styles.statLabel}>首曲目</Text>
+                    <Text style={styles.statLabel}>Tracks</Text>
                   </View>
                   <View style={styles.statDivider} />
                   <View style={styles.statCard}>
                     <Text style={styles.statValue}>
                       {source === "jamendo" ? "Live" : "Demo"}
                     </Text>
-                    <Text style={styles.statLabel}>歌单来源</Text>
+                    <Text style={styles.statLabel}>Source</Text>
                   </View>
                 </View>
 
@@ -206,8 +206,8 @@ export default function Index() {
 
               <View style={styles.sectionHeader}>
                 <View>
-                  <Text style={styles.sectionEyebrow}>曲库</Text>
-                  <Text style={styles.sectionTitle}>快速找到想听的歌</Text>
+                  <Text style={styles.sectionEyebrow}>Library</Text>
+                  <Text style={styles.sectionTitle}>Find something worth replaying</Text>
                 </View>
               </View>
 
@@ -231,7 +231,7 @@ export default function Index() {
                   onChangeText={(value) => {
                     startTransition(() => setQuery(value));
                   }}
-                  placeholder="搜索歌名 / 歌手"
+                  placeholder="Search songs or artists"
                   placeholderTextColor="#6B7280"
                   style={styles.search}
                 />
@@ -240,11 +240,11 @@ export default function Index() {
               {(isLoading || error) && (
                 <View style={styles.infoCard}>
                   <Text style={styles.infoTitle}>
-                    {isLoading ? "正在从 Jamendo 加载歌单..." : "歌单状态"}
+                    {isLoading ? "Loading playlist from Jamendo..." : "Playlist status"}
                   </Text>
                   <Text style={styles.infoText}>
                     {isLoading
-                      ? "正在获取在线曲目与封面，请稍候。"
+                      ? "Fetching online tracks and artwork. Please wait."
                       : error}
                   </Text>
                 </View>
@@ -253,8 +253,8 @@ export default function Index() {
           }
           ListEmptyComponent={
             <View style={styles.emptyCard}>
-              <Text style={styles.emptyTitle}>没有找到匹配结果</Text>
-              <Text style={styles.emptyText}>换个关键词试试，比如歌名或歌手名。</Text>
+              <Text style={styles.emptyTitle}>No results found</Text>
+              <Text style={styles.emptyText}>Try another keyword, song title, or artist name.</Text>
             </View>
           }
           ListFooterComponent={
@@ -286,7 +286,7 @@ export default function Index() {
                   {item.artist}
                 </Text>
                 <Text style={styles.trackDesc} numberOfLines={1}>
-                  点击进入沉浸式播放页
+                  Open the immersive player view
                 </Text>
               </View>
 
@@ -305,7 +305,7 @@ export default function Index() {
             }
           >
             <View style={styles.miniPlayerMeta}>
-              <Text style={styles.miniPlayerEyebrow}>正在播放</Text>
+              <Text style={styles.miniPlayerEyebrow}>Now Playing</Text>
               <Text style={styles.miniPlayerTitle} numberOfLines={1}>
                 {currentTrack.title}
               </Text>
@@ -314,7 +314,7 @@ export default function Index() {
               </Text>
             </View>
             <View style={styles.miniPlayerBadge}>
-              <Text style={styles.miniPlayerBadgeText}>{isPlaying ? "播放中" : "已暂停"}</Text>
+              <Text style={styles.miniPlayerBadgeText}>{isPlaying ? "Playing" : "Paused"}</Text>
             </View>
           </Pressable>
         )}

@@ -49,7 +49,7 @@ export function useTracks(query: string, category: TrackCategory): UseTracksResu
       setIsLoadingMore(false);
       setHasMore(false);
       setPage(0);
-      setError("未配置 Jamendo client_id，当前使用本地示例歌单。");
+      setError("Jamendo client_id is missing, so the app is using the local sample playlist.");
       return;
     }
 
@@ -78,8 +78,8 @@ export function useTracks(query: string, category: TrackCategory): UseTracksResu
         setHasMore(false);
         setError(
           err instanceof Error
-            ? `${err.message}，未能获取在线歌单。`
-            : "Jamendo 加载失败，未能获取在线歌单。"
+            ? `${err.message}. Unable to load the online playlist.`
+            : "Jamendo failed to load the online playlist."
         );
       } finally {
         if (!isCancelled) {
@@ -118,8 +118,8 @@ export function useTracks(query: string, category: TrackCategory): UseTracksResu
       .catch((err) => {
         setError(
           err instanceof Error
-            ? `${err.message}，继续加载更多歌曲失败。`
-            : "Jamendo 加载失败，继续加载更多歌曲失败。"
+            ? `${err.message}. Unable to load more songs.`
+            : "Jamendo failed while loading more songs."
         );
       })
       .finally(() => {

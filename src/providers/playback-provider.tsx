@@ -65,7 +65,7 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
       try {
         player.play();
       } catch {
-        setError("播放启动失败，请重试。");
+        setError("Unable to start playback. Please try again.");
       }
     }
   }, [currentTrack?.url, player, status.isLoaded]);
@@ -102,7 +102,7 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
         player.play();
       }
     } catch {
-      setError("播放控制失败，请稍后再试。");
+      setError("Playback control failed. Please try again in a moment.");
     }
   };
 
@@ -116,7 +116,7 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
       setError(null);
       await player.seekTo(nextPosition / 1000);
     } catch {
-      setError("拖动进度失败，请稍后再试。");
+      setError("Seeking failed. Please try again in a moment.");
     }
   };
 
@@ -129,7 +129,7 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
       setError(null);
       await player.seekTo(nextPosition / 1000);
     } catch {
-      setError("调整播放进度失败，请稍后再试。");
+      setError("Unable to adjust playback progress right now.");
     }
   };
 

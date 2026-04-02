@@ -11,8 +11,8 @@ export default function RootLayout() {
           headerTintColor: "#FFFFFF",
         }}
       >
-        <Stack.Screen name="index" options={{ title: "曲库" }} />
-        <Stack.Screen name="player" options={{ title: "播放器" }} />
+        <Stack.Screen name="index" options={{ title: "Library" }} />
+        <Stack.Screen name="player" options={{ title: "Player" }} />
       </Stack>
     </PlaybackProvider>
   );

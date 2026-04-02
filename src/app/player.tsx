@@ -59,14 +59,14 @@ export default function PlayerScreen() {
   const track = currentTrack;
   const isTrackReady = Boolean(track && isLoaded);
   const statusText = isLoading
-    ? "正在准备播放"
+    ? "Preparing audio"
     : isBuffering
-      ? "缓冲中"
+      ? "Buffering"
       : isPlaying
-        ? "正在播放"
+        ? "Playing"
         : isTrackReady
-          ? "已暂停"
-          : "暂无可播放曲目";
+          ? "Paused"
+          : "No track available";
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
@@ -76,7 +76,7 @@ export default function PlayerScreen() {
 
         <Stack.Screen
           options={{
-            title: "播放器",
+            title: "Player",
             headerStyle: { backgroundColor: "#07111F" },
             headerTintColor: "#F8FAFC",
           }}
@@ -85,7 +85,7 @@ export default function PlayerScreen() {
         <View style={styles.container}>
           <View style={styles.topRow}>
             <Pressable style={styles.back} onPress={() => router.back()}>
-              <Text style={styles.backText}>返回曲库</Text>
+              <Text style={styles.backText}>Back to Library</Text>
             </Pressable>
             <View style={styles.badge}>
               <Text style={styles.badgeText}>{statusText}</Text>
@@ -107,12 +107,12 @@ export default function PlayerScreen() {
             <View style={styles.trackBlock}>
               <Text style={styles.eyebrow}>Now Playing</Text>
               <Text style={styles.title} numberOfLines={1}>
-                {track?.title ?? (isLoading ? "正在加载歌曲..." : "未找到可播放歌曲")}
+                {track?.title ?? (isLoading ? "Loading track..." : "No playable track found")}
               </Text>
               <Text style={styles.artist} numberOfLines={1}>
-                {track?.artist ?? (isLoading ? "请稍候" : "请返回曲库重新选择")}
+                {track?.artist ?? (isLoading ? "Please wait" : "Return to the library to choose again")}
               </Text>
-              <Text style={styles.albumMeta}>精选歌单 · 无损氛围感试听</Text>
+              <Text style={styles.albumMeta}>Featured playlist · immersive preview session</Text>
             </View>
 
             <Pressable
@@ -135,7 +135,7 @@ export default function PlayerScreen() {
                 <Text style={styles.smallBtnText}>-15s</Text>
               </Pressable>
               <Pressable style={styles.smallBtn} onPress={playPrevious}>
-                <Text style={styles.smallBtnText}>上一首</Text>
+                <Text style={styles.smallBtnText}>Prev</Text>
               </Pressable>
               <Pressable
                 style={[styles.playBtn, !isTrackReady && styles.disabledBtn]}
@@ -143,11 +143,11 @@ export default function PlayerScreen() {
                 disabled={!isTrackReady}
               >
                 <Text style={styles.playBtnText}>
-                  {isLoading ? "加载中" : isPlaying ? "暂停" : "播放"}
+                  {isLoading ? "Loading" : isPlaying ? "Pause" : "Play"}
                 </Text>
               </Pressable>
               <Pressable style={styles.smallBtn} onPress={playNext}>
-                <Text style={styles.smallBtnText}>下一首</Text>
+                <Text style={styles.smallBtnText}>Next</Text>
               </Pressable>
               <Pressable style={styles.smallBtn} onPress={() => jumpByMs(15000)}>
                 <Text style={styles.smallBtnText}>+15s</Text>
@@ -157,15 +157,15 @@ export default function PlayerScreen() {
 
           <View style={styles.queueCard}>
             <View style={styles.queueTop}>
-              <Text style={styles.queueTitle}>接下来播放</Text>
+              <Text style={styles.queueTitle}>Up Next</Text>
               <Text style={styles.queueCount}>
                 {hasQueue ? currentIndex + 1 : 0}/{queue.length}
               </Text>
             </View>
-            <Text style={styles.queueText}>播放结束后会自动切到下一首，适合连续试听整组曲目。</Text>
+            <Text style={styles.queueText}>Playback will automatically continue to the next track for uninterrupted listening.</Text>
             {error && <Text style={styles.queueHint}>{error}</Text>}
             <Text style={styles.queueHint}>
-              当前来源：{source === "jamendo" ? "Jamendo 在线歌单" : "本地示例歌单"}
+              Source: {source === "jamendo" ? "Jamendo online playlist" : "Local sample playlist"}
             </Text>
           </View>
         </View>
