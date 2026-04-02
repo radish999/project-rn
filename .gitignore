@@ -42,3 +42,9 @@ app-example
 # generated native folders
 /ios
 /android
+
+credentials.json
+pepk.jar
+huawei-signing/
+PRIVACY.md
+TERMS.md
