@@ -12,7 +12,7 @@ export default function RootLayout() {
         }}
       >
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="player" options={{ title: "Player" }} />
+        <Stack.Screen name="player" options={{ title: "Player", headerBackTitle: "Back" }} />
         <Stack.Screen name="about" options={{ title: "About", headerBackTitle: "Back" }} />
       </Stack>
     </PlaybackProvider>

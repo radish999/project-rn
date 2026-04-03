@@ -1,6 +1,7 @@
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { startTransition, useEffect, useRef, useState } from "react";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import {
   Animated,
   FlatList,
@@ -15,6 +16,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useTracks } from "@/src/hooks/use-tracks";
 import type { TrackCategory } from "@/src/lib/tracks";
 import { usePlayback } from "@/src/providers/playback-provider";
+import { usePlayerSessionStore } from "@/src/stores/player-session-store";
 
 const categoryTabs: { key: TrackCategory; label: string }[] = [
   { key: "featured", label: "Featured" },
@@ -149,7 +151,8 @@ export default function Index() {
   const [activeCategory, setActiveCategory] = useState<TrackCategory>("featured");
   const { error, hasMore, isLoading, isLoadingMore, loadMore, source, tracks } =
     useTracks(query, activeCategory);
-  const { currentTrack, isPlaying, selectTrack } = usePlayback();
+  const { currentTrack, isPlaying, selectTrack, queue, togglePlay, stopPlayback } = usePlayback();
+  const setSession = usePlayerSessionStore((s) => s.setSession);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
@@ -264,8 +267,17 @@ export default function Index() {
             <Pressable
               style={[styles.item, index === 0 && styles.itemFeatured]}
               onPress={() => {
+                setSession({
+                  selectedTrackId: item.id,
+                  tracksSnapshot: tracks.slice(),
+                  query,
+                  category: activeCategory,
+                });
                 selectTrack(item.id, tracks);
-                router.push({ pathname: "/player", params: { id: item.id } });
+                router.push({
+                  pathname: "/player",
+                  params: { id: item.id, query, category: activeCategory },
+                });
               }}
             >
               <View style={styles.itemIndex}>
@@ -298,7 +310,18 @@ export default function Index() {
         {currentTrack && (
           <Pressable
             style={styles.miniPlayer}
-            onPress={() => router.push({ pathname: "/player", params: { id: currentTrack.id } })}
+            onPress={() => {
+              setSession({
+                selectedTrackId: currentTrack.id,
+                tracksSnapshot: queue.length ? queue : tracks.slice(),
+                query,
+                category: activeCategory,
+              });
+              router.push({
+                pathname: "/player",
+                params: { id: currentTrack.id, query, category: activeCategory },
+              });
+            }}
           >
             <View style={styles.miniPlayerMeta}>
               <Text style={styles.miniPlayerEyebrow}>Now Playing</Text>
@@ -309,8 +332,34 @@ export default function Index() {
                 {currentTrack.artist}
               </Text>
             </View>
-            <View style={styles.miniPlayerBadge}>
-              <Text style={styles.miniPlayerBadgeText}>{isPlaying ? "Playing" : "Paused"}</Text>
+
+            <View style={styles.miniPlayerActions}>
+              <Pressable
+                style={styles.miniActionBtn}
+                accessibilityRole="button"
+                accessibilityLabel={isPlaying ? "Pause" : "Play"}
+                onPress={(e) => {
+                  e.stopPropagation();
+                  void togglePlay();
+                }}
+              >
+                <MaterialIcons
+                  name={isPlaying ? "pause" : "play-arrow"}
+                  color="#0B1220"
+                  size={18}
+                />
+              </Pressable>
+              <Pressable
+                style={styles.miniCloseBtn}
+                accessibilityRole="button"
+                accessibilityLabel="Close player"
+                onPress={(e) => {
+                  e.stopPropagation();
+                  stopPlayback();
+                }}
+              >
+                <MaterialIcons name="close" color="#E2E8F0" size={18} />
+              </Pressable>
             </View>
           </Pressable>
         )}
@@ -393,18 +442,30 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginTop: 4,
   },
-  miniPlayerBadge: {
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: "rgba(56,189,248,0.14)",
-    borderWidth: 1,
-    borderColor: "rgba(125,211,252,0.25)",
+  miniPlayerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
   },
-  miniPlayerBadgeText: {
-    color: "#BAE6FD",
-    fontSize: 12,
-    fontWeight: "700",
+  miniActionBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderWidth: 1,
+    borderColor: "rgba(148,163,184,0.16)",
+  },
+  miniCloseBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(251,113,133,0.10)",
+    borderWidth: 1,
+    borderColor: "rgba(251,113,133,0.28)",
   },
   heroCard: {
     overflow: "hidden",

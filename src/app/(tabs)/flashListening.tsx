@@ -3,9 +3,35 @@ import { Image } from "expo-image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { usePathname } from "expo-router";
 
 import { useTracks } from "@/src/hooks/use-tracks";
 import { usePlayback } from "@/src/providers/playback-provider";
+import type { Track } from "@/src/lib/tracks";
+
+function createRng(initialSeed: number) {
+  let a = initialSeed | 0;
+  return () => {
+    a |= 0;
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function getShuffledQueue(sourceTracks: Track[], seedValue: number) {
+  if (!sourceTracks.length) return [] as Track[];
+
+  const copy = [...sourceTracks];
+  const rng = createRng(seedValue + 1);
+  for (let i = copy.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(rng() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy.slice(0, 20);
+}
+
 export default function FlashListeningScreen() {
   const previewMs = 30000;
   const [previewMode, setPreviewMode] = useState(true);
@@ -16,47 +42,68 @@ export default function FlashListeningScreen() {
   const currentId = playback.currentTrack?.id ?? null;
   const isPlaying = playback.isPlaying;
   const isBuffering = playback.isBuffering;
+  const pathname = usePathname();
+  const isOnFlashListening = /\/flashListening\/?$/.test(pathname);
   const playNextRef = useRef(playback.playNext);
   const selectTrackRef = useRef(playback.selectTrack);
+  const stopPlaybackRef = useRef(playback.stopPlayback);
+  const setAutoAdvanceOnFinishRef = useRef(playback.setAutoAdvanceOnFinish);
+  const isOnFlashListeningRef = useRef(isOnFlashListening);
+  const hasInitializedFlashRef = useRef(false);
+
+  useEffect(() => {
+    isOnFlashListeningRef.current = isOnFlashListening;
+  }, [isOnFlashListening]);
+
+  useEffect(() => {
+    // During Flash Listening preview, page-level navigation and preview jumps can
+    // make `status.didJustFinish` fire unexpectedly, causing double-advances.
+    // Keep "auto advance on finish" disabled so only this screen's preview timer
+    // drives the next-track behavior. When switching to full playback, re-enable it.
+    setAutoAdvanceOnFinishRef.current(!previewMode);
+    return () => {
+      setAutoAdvanceOnFinishRef.current(true);
+    };
+  }, [previewMode]);
 
   useEffect(() => {
     playNextRef.current = playback.playNext;
     selectTrackRef.current = playback.selectTrack;
-  }, [playback.playNext, playback.selectTrack]);
-
-  const createRng = (initialSeed: number) => {
-    let a = initialSeed | 0;
-    return () => {
-      a |= 0;
-      a = (a + 0x6d2b79f5) | 0;
-      let t = Math.imul(a ^ (a >>> 15), 1 | a);
-      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-    };
-  };
+    stopPlaybackRef.current = playback.stopPlayback;
+    setAutoAdvanceOnFinishRef.current = playback.setAutoAdvanceOnFinish;
+  }, [playback.playNext, playback.selectTrack, playback.stopPlayback, playback.setAutoAdvanceOnFinish]);
 
   const queue = useMemo(() => {
-    if (!tracks.length) return [];
-    const copy = [...tracks];
-    const rng = createRng(seed + 1);
-    for (let i = copy.length - 1; i > 0; i -= 1) {
-      const j = Math.floor(rng() * (i + 1));
-      [copy[i], copy[j]] = [copy[j], copy[i]];
-    }
-    return copy.slice(0, 20);
+    return getShuffledQueue(tracks, seed);
   }, [tracks, seed]);
-
-  useEffect(() => {
-    if (!queue.length) return;
-
-    const stillInQueue = currentId ? queue.some((t) => t.id === currentId) : false;
-    if (stillInQueue) return;
-
-    selectTrackRef.current(queue[0].id, queue);
-  }, [currentId, queue]);
 
   const autoNextRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const autoNextTrackIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!isOnFlashListening) {
+      if (autoNextRef.current) {
+        clearTimeout(autoNextRef.current);
+        autoNextRef.current = null;
+      }
+      autoNextTrackIdRef.current = null;
+      stopPlaybackRef.current();
+      // Restore normal playback behavior for the rest of the app.
+      setAutoAdvanceOnFinishRef.current(true);
+      hasInitializedFlashRef.current = false;
+      return;
+    }
+
+    // Entering Flash Listening: start a fresh random queue.
+    // This intentionally ignores any currently playing home song.
+    if (hasInitializedFlashRef.current) return;
+    if (!queue.length) return;
+
+    hasInitializedFlashRef.current = true;
+    stopPlaybackRef.current();
+    setPreviewMode(true);
+    selectTrackRef.current(queue[0].id, queue);
+  }, [isOnFlashListening, queue]);
 
   useEffect(() => {
     if (autoNextRef.current) {
@@ -64,6 +111,7 @@ export default function FlashListeningScreen() {
       autoNextRef.current = null;
     }
 
+    if (!isOnFlashListening) return;
     if (!previewMode || !currentId || !isPlaying) {
       autoNextTrackIdRef.current = null;
       return;
@@ -73,6 +121,8 @@ export default function FlashListeningScreen() {
     autoNextTrackIdRef.current = currentId;
 
     autoNextRef.current = setTimeout(() => {
+      // Extra guard: if we navigated away while waiting, do nothing.
+      if (!isOnFlashListeningRef.current) return;
       autoNextTrackIdRef.current = null;
       playNextRef.current();
     }, previewMs);
@@ -83,7 +133,7 @@ export default function FlashListeningScreen() {
         autoNextRef.current = null;
       }
     };
-  }, [currentId, isPlaying, previewMode, previewMs]);
+  }, [currentId, isPlaying, isOnFlashListening, previewMode, previewMs]);
 
   const current = playback.currentTrack;
   const durationMs = playback.durationMs;
@@ -116,7 +166,19 @@ export default function FlashListeningScreen() {
                 {previewMode ? "Preview" : "Full"}
               </Text>
             </Pressable>
-            <Pressable style={styles.iconBtn} onPress={() => setSeed((v) => v + 1)}>
+            <Pressable
+              style={styles.iconBtn}
+              onPress={() => {
+                const nextSeed = seed + 1;
+                setSeed(nextSeed);
+
+                // Refresh should have a visible effect: re-shuffle and jump to
+                // the first track of the new queue.
+                const nextQueue = getShuffledQueue(tracks, nextSeed);
+                if (!nextQueue.length) return;
+                selectTrackRef.current(nextQueue[0].id, nextQueue);
+              }}
+            >
               <MaterialIcons name="refresh" color="#E2E8F0" size={20} />
             </Pressable>
           </View>

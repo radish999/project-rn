@@ -35,6 +35,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="user"
         options={{
+          headerShown: false,
           title: "Me",
           tabBarLabel: "Me",
           tabBarIcon: ({ color, size }) => (

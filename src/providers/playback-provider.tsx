@@ -15,12 +15,15 @@ type PlaybackContextValue = {
   isPlaying: boolean;
   positionMs: number;
   queue: Track[];
+  autoAdvanceOnFinish: boolean;
   jumpByMs: (delta: number) => Promise<void>;
   playNext: () => void;
   playPrevious: () => void;
   seekToFraction: (fraction: number) => Promise<void>;
   selectTrack: (trackId: string, nextQueue?: Track[]) => void;
   togglePlay: () => Promise<void>;
+  setAutoAdvanceOnFinish: (enabled: boolean) => void;
+  stopPlayback: () => void;
 };
 
 const PlaybackContext = createContext<PlaybackContextValue | null>(null);
@@ -29,6 +32,7 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
   const [queue, setQueue] = useState<Track[]>([]);
   const [currentTrackId, setCurrentTrackId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [autoAdvanceOnFinish, setAutoAdvanceOnFinish] = useState(true);
 
   const currentIndex = useMemo(() => {
     if (!queue.length) return -1;
@@ -71,11 +75,11 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
   }, [currentTrack?.url, player, status.isLoaded]);
 
   useEffect(() => {
-    if (status.didJustFinish && queue.length > 0) {
+    if (status.didJustFinish && autoAdvanceOnFinish && queue.length > 0) {
       const nextIndex = (currentIndex + 1) % queue.length;
       setCurrentTrackId(queue[nextIndex]?.id ?? null);
     }
-  }, [currentIndex, queue, status.didJustFinish]);
+  }, [autoAdvanceOnFinish, currentIndex, queue, status.didJustFinish]);
 
   const selectTrack = (trackId: string, nextQueue?: Track[]) => {
     setError(null);
@@ -104,6 +108,18 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
     } catch {
       setError("Playback control failed. Please try again in a moment.");
     }
+  };
+
+  const stopPlayback = () => {
+    try {
+      player.pause();
+    } catch {
+      // ignore
+    }
+
+    setError(null);
+    setQueue([]);
+    setCurrentTrackId(null);
   };
 
   const seekToFraction = async (fraction: number) => {
@@ -145,37 +161,27 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
     setCurrentTrackId(queue[nextIndex]?.id ?? null);
   };
 
-  const value = useMemo<PlaybackContextValue>(
-    () => ({
-      currentIndex,
-      currentTrack,
-      durationMs,
-      error,
-      hasQueue: queue.length > 0,
-      isBuffering,
-      isLoaded,
-      isPlaying,
-      positionMs,
-      queue,
-      jumpByMs,
-      playNext,
-      playPrevious,
-      seekToFraction,
-      selectTrack,
-      togglePlay,
-    }),
-    [
-      currentIndex,
-      currentTrack,
-      durationMs,
-      error,
-      isBuffering,
-      isLoaded,
-      isPlaying,
-      positionMs,
-      queue,
-    ]
-  );
+  const value: PlaybackContextValue = {
+    currentIndex,
+    currentTrack,
+    durationMs,
+    error,
+    hasQueue: queue.length > 0,
+    isBuffering,
+    isLoaded,
+    isPlaying,
+    positionMs,
+    queue,
+    autoAdvanceOnFinish,
+    jumpByMs,
+    playNext,
+    playPrevious,
+    seekToFraction,
+    selectTrack,
+    togglePlay,
+    setAutoAdvanceOnFinish,
+    stopPlayback,
+  };
 
   return <PlaybackContext.Provider value={value}>{children}</PlaybackContext.Provider>;
 }

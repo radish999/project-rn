@@ -5,7 +5,9 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useTracks } from "@/src/hooks/use-tracks";
+import type { TrackCategory } from "@/src/lib/tracks";
 import { usePlayback } from "@/src/providers/playback-provider";
+import { usePlayerSessionStore } from "@/src/stores/player-session-store";
 
 function formatTime(ms: number) {
   if (!Number.isFinite(ms) || ms < 0) return "0:00";
@@ -17,9 +19,20 @@ function formatTime(ms: number) {
 
 export default function PlayerScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ id?: string }>();
-  const { error, isLoading, source, tracks } = useTracks("", "featured");
+  const params = useLocalSearchParams<{ id?: string; query?: string; category?: string }>();
+
+  const resolvedCategory: TrackCategory = (() => {
+    const raw = typeof params.category === "string" ? params.category : "featured";
+    const allowed: TrackCategory[] = ["featured", "pop", "electronic", "night"];
+    return allowed.includes(raw as TrackCategory) ? (raw as TrackCategory) : "featured";
+  })();
+
+  const resolvedQuery = typeof params.query === "string" ? params.query : "";
+
+  const { error, isLoading, source, tracks } = useTracks(resolvedQuery, resolvedCategory);
   const [barWidth, setBarWidth] = useState(0);
+  const sessionSelectedTrackId = usePlayerSessionStore((s) => s.selectedTrackId);
+  const sessionTracksSnapshot = usePlayerSessionStore((s) => s.tracksSnapshot);
   const {
     currentIndex,
     currentTrack,
@@ -40,15 +53,53 @@ export default function PlayerScreen() {
 
   useEffect(() => {
     const id = typeof params.id === "string" ? params.id : undefined;
-    if (!id || !tracks.length) return;
+    if (!id) return;
 
     const hasRequestedTrack = queue.some((track) => track.id === id);
-    if (!hasRequestedTrack) {
-      selectTrack(id, tracks);
-    } else if (!currentTrack || currentTrack.id !== id) {
-      selectTrack(id);
+    const hasSessionSnapshot = sessionSelectedTrackId === id && sessionTracksSnapshot.length > 0;
+
+    if (hasSessionSnapshot) {
+      // Use `sessionTracksSnapshot` captured during Home navigation to avoid
+      // Home -> Player timing races:
+      // - `hasRequestedTrack` tells whether the provider queue already contains `id`.
+      // - If it does, ensure `currentTrack` matches `id` via `selectTrack(id)`.
+      // - If it doesn't, force `selectTrack(id, sessionTracksSnapshot)` so playback starts
+      //   from the intended snapshot.
+      if (hasRequestedTrack) {
+        if (!currentTrack || currentTrack.id !== id) selectTrack(id);
+      } else {
+        selectTrack(id, sessionTracksSnapshot);
+      }
+      return;
     }
-  }, [currentTrack, params.id, queue, selectTrack, tracks]);
+
+    // Fallback (no snapshot): keep the previous race-resistant strategy.
+    if (hasRequestedTrack) {
+      if (!currentTrack || currentTrack.id !== id) selectTrack(id);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      const stillMissing = !queue.some((track) => track.id === id);
+      if (!stillMissing) return;
+
+      if (tracks.length) {
+        selectTrack(id, tracks);
+      } else {
+        selectTrack(id);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [
+    currentTrack,
+    params.id,
+    queue,
+    selectTrack,
+    tracks,
+    sessionSelectedTrackId,
+    sessionTracksSnapshot,
+  ]);
 
   const onPressBar = async (x: number) => {
     if (!barWidth) return;
