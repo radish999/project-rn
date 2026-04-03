@@ -1,6 +1,6 @@
 import { Image } from "expo-image";
-import { startTransition, useEffect, useRef, useState } from "react";
 import { useRouter } from "expo-router";
+import { startTransition, useEffect, useRef, useState } from "react";
 import {
   Animated,
   FlatList,
@@ -16,7 +16,7 @@ import { useTracks } from "@/src/hooks/use-tracks";
 import type { TrackCategory } from "@/src/lib/tracks";
 import { usePlayback } from "@/src/providers/playback-provider";
 
-const categoryTabs: Array<{ key: TrackCategory; label: string }> = [
+const categoryTabs: { key: TrackCategory; label: string }[] = [
   { key: "featured", label: "Featured" },
   { key: "pop", label: "Pop" },
   { key: "electronic", label: "Electronic" },
@@ -185,9 +185,7 @@ export default function Index() {
                   </View>
                   <View style={styles.statDivider} />
                   <View style={styles.statCard}>
-                    <Text style={styles.statValue}>
-                      {source === "jamendo" ? "Live" : "Demo"}
-                    </Text>
+                    <Text style={styles.statValue}>{source === "jamendo" ? "Live" : "Demo"}</Text>
                     <Text style={styles.statLabel}>Source</Text>
                   </View>
                 </View>
@@ -243,19 +241,19 @@ export default function Index() {
                     {isLoading ? "Loading playlist from Jamendo..." : "Playlist status"}
                   </Text>
                   <Text style={styles.infoText}>
-                    {isLoading
-                      ? "Fetching online tracks and artwork. Please wait."
-                      : error}
+                    {isLoading ? "Fetching online tracks and artwork. Please wait." : error}
                   </Text>
                 </View>
               )}
             </View>
           }
           ListEmptyComponent={
-            <View style={styles.emptyCard}>
-              <Text style={styles.emptyTitle}>No results found</Text>
-              <Text style={styles.emptyText}>Try another keyword, song title, or artist name.</Text>
-            </View>
+            !isLoading && !error ? (
+              <View style={styles.emptyCard}>
+                <Text style={styles.emptyTitle}>No results found</Text>
+                <Text style={styles.emptyText}>Try another keyword, song title, or artist name.</Text>
+              </View>
+            ) : null
           }
           ListFooterComponent={
             tracks.length > 0 ? (
@@ -267,7 +265,7 @@ export default function Index() {
               style={[styles.item, index === 0 && styles.itemFeatured]}
               onPress={() => {
                 selectTrack(item.id, tracks);
-                router.push({ pathname: "./player", params: { id: item.id } });
+                router.push({ pathname: "/player", params: { id: item.id } });
               }}
             >
               <View style={styles.itemIndex}>
@@ -300,9 +298,7 @@ export default function Index() {
         {currentTrack && (
           <Pressable
             style={styles.miniPlayer}
-            onPress={() =>
-              router.push({ pathname: "./player", params: { id: currentTrack.id } })
-            }
+            onPress={() => router.push({ pathname: "/player", params: { id: currentTrack.id } })}
           >
             <View style={styles.miniPlayerMeta}>
               <Text style={styles.miniPlayerEyebrow}>Now Playing</Text>

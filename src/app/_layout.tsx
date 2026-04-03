@@ -11,8 +11,9 @@ export default function RootLayout() {
           headerTintColor: "#FFFFFF",
         }}
       >
-        <Stack.Screen name="index" options={{ title: "Library" }} />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="player" options={{ title: "Player" }} />
+        <Stack.Screen name="about" options={{ title: "About", headerBackTitle: "Back" }} />
       </Stack>
     </PlaybackProvider>
   );
