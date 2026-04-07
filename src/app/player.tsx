@@ -59,23 +59,16 @@ export default function PlayerScreen() {
     const hasSessionSnapshot = sessionSelectedTrackId === id && sessionTracksSnapshot.length > 0;
 
     if (hasSessionSnapshot) {
-      // Use `sessionTracksSnapshot` captured during Home navigation to avoid
-      // Home -> Player timing races:
-      // - `hasRequestedTrack` tells whether the provider queue already contains `id`.
-      // - If it does, ensure `currentTrack` matches `id` via `selectTrack(id)`.
-      // - If it doesn't, force `selectTrack(id, sessionTracksSnapshot)` so playback starts
-      //   from the intended snapshot.
       if (hasRequestedTrack) {
-        if (!currentTrack || currentTrack.id !== id) selectTrack(id);
+        selectTrack(id);
       } else {
         selectTrack(id, sessionTracksSnapshot);
       }
       return;
     }
 
-    // Fallback (no snapshot): keep the previous race-resistant strategy.
     if (hasRequestedTrack) {
-      if (!currentTrack || currentTrack.id !== id) selectTrack(id);
+      selectTrack(id);
       return;
     }
 
@@ -92,7 +85,6 @@ export default function PlayerScreen() {
 
     return () => clearTimeout(timer);
   }, [
-    currentTrack,
     params.id,
     queue,
     selectTrack,
