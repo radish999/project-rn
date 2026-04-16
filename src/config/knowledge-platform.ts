@@ -1,13 +1,20 @@
 import Constants from "expo-constants";
 
-const fallbackUrl = "http://localhost:5173";
-
 const configuredUrl = Constants.expoConfig?.extra?.knowledgePlatformUrl;
+const devConfiguredUrl = process.env.EXPO_PUBLIC_KNOWLEDGE_PLATFORM_DEV_URL;
 
-export const KNOWLEDGE_PLATFORM_URL =
+const productionUrl =
   typeof configuredUrl === "string" && configuredUrl.trim().length > 0
     ? configuredUrl.replace(/\/+$/, "")
-    : fallbackUrl;
+    : "https://www.goodbai.baby";
+
+const developmentUrl =
+  typeof devConfiguredUrl === "string" && devConfiguredUrl.trim().length > 0
+    ? devConfiguredUrl.replace(/\/+$/, "")
+    : productionUrl;
+
+export const KNOWLEDGE_PLATFORM_URL =
+  __DEV__ ? developmentUrl : productionUrl;
 
 export function getKnowledgePlatformUrl(path = "/") {
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
