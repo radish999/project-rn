@@ -39,102 +39,29 @@ const injectedBridgeScript = `
       }, 60);
     }
 
-    function applyMobileHeaderTweaks() {
-      if (document.getElementById("__knowledge_platform_mobile_header_styles__")) {
-        return;
-      }
-
-      var style = document.createElement("style");
-      style.id = "__knowledge_platform_mobile_header_styles__";
-      style.textContent = [
-        "@media (max-width: 768px) {",
-        "  header.sticky { padding: 12px 16px !important; }",
-        "  header.sticky > div,",
-        "  header > div.mx-auto {",
-        "    display: flex !important;",
-        "    flex-direction: column !important;",
-        "    align-items: stretch !important;",
-        "    justify-content: flex-start !important;",
-        "    gap: 12px !important;",
-        "  }",
-        "  header a[href='/'],",
-        "  header a[href='\\/'] {",
-        "    align-self: flex-start !important;",
-        "  }",
-        "  header a[href='/'] span,",
-        "  header a[href='\\/'] span {",
-        "    font-size: 18px !important;",
-        "    line-height: 1.2 !important;",
-        "  }",
-        "  header nav {",
-        "    width: 100% !important;",
-        "    overflow-x: auto !important;",
-        "    -webkit-overflow-scrolling: touch !important;",
-        "    padding: 0 !important;",
-        "    margin: 0 !important;",
-        "  }",
-        "  header nav::-webkit-scrollbar { display: none !important; }",
-        "  header nav ul {",
-        "    display: flex !important;",
-        "    flex-wrap: nowrap !important;",
-        "    min-width: max-content !important;",
-        "    width: max-content !important;",
-        "    gap: 12px !important;",
-        "    align-items: center !important;",
-        "    padding: 0 0 2px 0 !important;",
-        "    margin: 0 !important;",
-        "  }",
-        "  header nav li {",
-        "    flex: 0 0 auto !important;",
-        "    list-style: none !important;",
-        "  }",
-        "  header nav a,",
-        "  header nav button {",
-        "    white-space: nowrap !important;",
-        "    writing-mode: horizontal-tb !important;",
-        "    font-size: 15px !important;",
-        "    line-height: 1.2 !important;",
-        "  }",
-        "  header nav button {",
-        "    padding: 8px 12px !important;",
-        "    border-radius: 12px !important;",
-        "  }",
-        "}",
-      ].join("");
-      document.head.appendChild(style);
-    }
-
-    function syncUiAfterRouteChange() {
-      applyMobileHeaderTweaks();
-      notifyRouteReady();
-    }
-
     var originalPushState = window.history.pushState;
     var originalReplaceState = window.history.replaceState;
 
     window.history.pushState = function () {
       var result = originalPushState.apply(window.history, arguments);
-      syncUiAfterRouteChange();
+      notifyRouteReady();
       return result;
     };
 
     window.history.replaceState = function () {
       var result = originalReplaceState.apply(window.history, arguments);
-      syncUiAfterRouteChange();
+      notifyRouteReady();
       return result;
     };
 
     window.addEventListener("load", function () {
-      applyMobileHeaderTweaks();
       post("page-load");
       notifyRouteReady();
     });
 
-    window.addEventListener("popstate", syncUiAfterRouteChange);
-    document.addEventListener("DOMContentLoaded", applyMobileHeaderTweaks);
+    window.addEventListener("popstate", notifyRouteReady);
     document.addEventListener("readystatechange", function () {
       if (document.readyState === "complete") {
-        applyMobileHeaderTweaks();
         post("document-ready");
         notifyRouteReady();
       }

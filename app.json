@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "知识平台",
-    "slug": "knowledge-platform-mobile",
+    "slug": "project-rn",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
