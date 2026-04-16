@@ -5,30 +5,20 @@ export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={{
-        headerStyle: { backgroundColor: "#0B1220" },
-        headerTintColor: "#FFFFFF",
-        tabBarStyle: { backgroundColor: "#0B1220", borderTopColor: "rgba(255,255,255,0.08)" },
-        tabBarActiveTintColor: "#38BDF8",
-        tabBarInactiveTintColor: "rgba(255,255,255,0.65)",
+        headerStyle: { backgroundColor: "#F5F7F2" },
+        headerTintColor: "#0F172A",
+        tabBarStyle: { backgroundColor: "#FFFFFF", borderTopColor: "rgba(15,23,42,0.08)" },
+        tabBarActiveTintColor: "#0F766E",
+        tabBarInactiveTintColor: "rgba(15,23,42,0.55)",
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: "Home",
-          tabBarLabel: "Home",
+          title: "知识平台",
+          tabBarLabel: "首页",
           tabBarIcon: ({ color, size }) => (
-            <MaterialIcons name="home" color={color} size={size ?? 22} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="flashListening"
-        options={{
-          title: "Flash Listening",
-          tabBarLabel: "Flash Listening",
-          tabBarIcon: ({ color, size }) => (
-            <MaterialIcons name="music-note" color={color} size={size ?? 22} />
+            <MaterialIcons name="article" color={color} size={size ?? 22} />
           ),
         }}
       />
@@ -36,8 +26,8 @@ export default function TabsLayout() {
         name="user"
         options={{
           headerShown: false,
-          title: "Me",
-          tabBarLabel: "Me",
+          title: "我的",
+          tabBarLabel: "我的",
           tabBarIcon: ({ color, size }) => (
             <MaterialIcons name="person" color={color} size={size ?? 22} />
           ),
